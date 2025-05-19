@@ -37,7 +37,7 @@ for obj in objects:
         Y, X = np.ogrid[:HEIGHT, :WIDTH]
         mask = ((X - (x1 + x2) / 2) ** 2) / ((x2 - x1) / 2) ** 2 + ((Y - (y1 + y2) / 2) ** 2) / ((y2 - y1) / 2) ** 2 <= 1
         # Set the pixels inside the oval to 1
-        data[mask, 0] = 2 # pixle occupied
+        data[mask, 0] = 3 # pixle marked as hole
 
 # Fill area of shifted rectangles
 for obj in objects:
@@ -72,7 +72,7 @@ Y, X = np.ogrid[:2*RADIUS + 1, :2*RADIUS + 1]
 mask = ((X - RADIUS) ** 2) + ((Y - RADIUS) ** 2) <= RADIUS ** 2
 circle[mask] = 1 # pixle occupied
 idx = np.indices((2*RADIUS + 1, 2*RADIUS + 1))
-circle = np.stack((circle, (idx[0] - RADIUS) * circle, (idx[1]- RADIUS) * circle), axis=-1)
+circle = np.stack((circle, (idx[0] - RADIUS) * circle / RADIUS, (idx[1]- RADIUS) * circle / RADIUS), axis=-1)
 
 # Fill cirle areas at the corners
 for obj in objects:
@@ -96,20 +96,32 @@ for obj in objects:
 
 
         
-        
+# print(data[60:75, 95:110, 1])
+# print(data[60:75, 95:110, 2])
 
 
 plt.imshow(2 - data[:,:,0], cmap='gray', vmin=0, vmax=2)
 plt.show()
 
-# plt.imshow(np.arctan2(data[:,:,1], data[:,:,2]), cmap='hsv', vmin=-np.pi, vmax=np.pi)
-# plt.show()
+plt.imshow(np.arctan2(data[:,:,1], data[:,:,2]), cmap='hsv', vmin=-np.pi, vmax=np.pi)
+plt.show()
 
 plt.imshow(1 - data[:,:,1])
 plt.show()
 plt.imshow(1 - data[:,:,2])
 plt.show()
 
+# Downsample for clarity (optional, otherwise plot will be very dense)
+step = 1  # plot every 10th pixel
+Y, X = np.mgrid[0:data.shape[0]:step, 0:data.shape[1]:step]
+U = data[::step, ::step, 2]  # x-component
+V = data[::step, ::step, 1]  # y-component
+
+plt.figure(figsize=(10, 6))
+plt.quiver(X, Y, U, V, angles='xy', scale_units='xy', scale=1, color='red')
+plt.gca().invert_yaxis()  # To match image coordinates
+plt.title("Gradient Field (from data[:,:,1] and data[:,:,2])")
+plt.show()
 
 window = tk.Tk()
 window.title("Game map")
