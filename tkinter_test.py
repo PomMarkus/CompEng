@@ -126,9 +126,10 @@ for obj in objects:
 window = tk.Tk()
 window.title("Game map")
 window.geometry("800x480")
+window.attributes('-fullscreen', True)
 
-canvas = tk.Canvas(window, width=800, height=480, bg="white")
-canvas.pack()
+canvas = tk.Canvas(window, width=window.winfo_screenwidth(), height=window.winfo_screenheight(), bg="white")
+canvas.pack(fill=tk.BOTH, expand=True)
 
 for obj in objects:
     if obj[0] == 'r':
@@ -141,6 +142,11 @@ for obj in objects:
 # with open("objects.dat", "w") as f:
 #     for obj in objects:
 #         f.write(f"{obj[0]}\t{obj[1]}\t{obj[2]}\t{obj[3]}\t{obj[4]}\n")
+
+def end_fullscreen(event=None):
+    window.attributes('-fullscreen', False)
+
+window.bind("<Escape>", end_fullscreen)
 
 window.mainloop()
 
