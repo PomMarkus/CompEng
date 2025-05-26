@@ -1,6 +1,6 @@
 import tkinter as tk
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 FILENAME = "objects.dat"
 RADIUS = 10
