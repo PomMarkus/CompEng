@@ -100,28 +100,28 @@ for obj in objects:
 # print(data[60:75, 95:110, 2])
 
 
-plt.imshow(2 - data[:,:,0], cmap='gray', vmin=0, vmax=2)
-plt.show()
+# plt.imshow(2 - data[:,:,0], cmap='gray', vmin=0, vmax=2)
+# plt.show()
 
-plt.imshow(np.arctan2(data[:,:,1], data[:,:,2]), cmap='hsv', vmin=-np.pi, vmax=np.pi)
-plt.show()
+# plt.imshow(np.arctan2(data[:,:,1], data[:,:,2]), cmap='hsv', vmin=-np.pi, vmax=np.pi)
+# plt.show()
 
-plt.imshow(1 - data[:,:,1])
-plt.show()
-plt.imshow(1 - data[:,:,2])
-plt.show()
+# plt.imshow(1 - data[:,:,1])
+# plt.show()
+# plt.imshow(1 - data[:,:,2])
+# plt.show()
 
 # Downsample for clarity (optional, otherwise plot will be very dense)
-step = 1  # plot every 10th pixel
-Y, X = np.mgrid[0:data.shape[0]:step, 0:data.shape[1]:step]
-U = data[::step, ::step, 2]  # x-component
-V = data[::step, ::step, 1]  # y-component
+# step = 1  # plot every 10th pixel
+# Y, X = np.mgrid[0:data.shape[0]:step, 0:data.shape[1]:step]
+# U = data[::step, ::step, 2]  # x-component
+# V = data[::step, ::step, 1]  # y-component
 
-plt.figure(figsize=(10, 6))
-plt.quiver(X, Y, U, V, angles='xy', scale_units='xy', scale=1, color='red')
-plt.gca().invert_yaxis()  # To match image coordinates
-plt.title("Gradient Field (from data[:,:,1] and data[:,:,2])")
-plt.show()
+# plt.figure(figsize=(10, 6))
+# plt.quiver(X, Y, U, V, angles='xy', scale_units='xy', scale=1, color='red')
+# plt.gca().invert_yaxis()  # To match image coordinates
+# plt.title("Gradient Field (from data[:,:,1] and data[:,:,2])")
+# plt.show()
 
 window = tk.Tk()
 window.title("Game map")
@@ -142,7 +142,7 @@ for obj in objects:
 #     for obj in objects:
 #         f.write(f"{obj[0]}\t{obj[1]}\t{obj[2]}\t{obj[3]}\t{obj[4]}\n")
 
-# window.mainloop()
+window.mainloop()
 
 
 
