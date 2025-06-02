@@ -138,7 +138,8 @@ def update_pos():
     vel[1] += ACC_SCALE * ay * DT / 1000
     Dpos = np.array(vel) * DT / 1000
     dist = np.linalg.norm(Dpos)
-    steps = int(dist / DP)
+    steps = int(dist / DP) if dist > DP else 1
+    
     dstep = Dpos / steps
     counter = 0
 
