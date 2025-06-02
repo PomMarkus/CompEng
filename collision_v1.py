@@ -6,7 +6,7 @@ import time
 RADIUS = 10
 HEIGHT = 480
 WIDTH = 800
-DT = 20
+DT = 50
 DP = 0.1
 STARTX = 60
 STARTY = 100
@@ -123,7 +123,7 @@ for obj in objects:
         canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="black", outline="black")
 
 
-pos = np.array([STARTX, STARTY])
+pos = np.array([STARTX, STARTY], dtype=float)
 vel = [0, 0]
 
 ball = canvas.create_oval(int(pos[0]) - RADIUS, int(pos[1]) - RADIUS, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS, fill="blue", outline="blue")
