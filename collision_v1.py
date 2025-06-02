@@ -8,7 +8,7 @@ HEIGHT = 480
 WIDTH = 800
 DT = 20
 DP = 0.1
-STARTX = 100
+STARTX = 60
 STARTY = 100
 
 ACC_SCALE = 10
@@ -156,7 +156,7 @@ def update_pos():
             Dpos *= (steps - counter) / (steps)
             Dpos *= (1 - DAMPING)
             dist = np.linalg.norm(Dpos)
-            steps = int(dist / DP)
+            steps = int(dist / DP) if dist > DP else 1
             dstep = Dpos / steps
             counter = 0
             continue
