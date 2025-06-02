@@ -133,7 +133,7 @@ def update_pos():
     global pos, vel
 
     current_acc = sensor.get_accel_data()
-    ax, ay = current_acc['x'], current_acc['y']
+    ax, ay = - current_acc['x'], current_acc['y']
     vel[0] += ACC_SCALE * ax * DT / 1000
     vel[1] += ACC_SCALE * ay * DT / 1000
     Dpos = np.array(vel) * DT / 1000
