@@ -6,7 +6,7 @@ import time
 RADIUS = 10
 HEIGHT = 480
 WIDTH = 800
-DT = 50
+DT = 100
 DP = 0.1
 STARTX = 60
 STARTY = 100
@@ -124,7 +124,7 @@ for obj in objects:
 
 
 pos = np.array([STARTX, STARTY], dtype=float)
-vel = [0, 0]
+vel = np.array([0, 0], dtype=float)
 
 ball = canvas.create_oval(int(pos[0]) - RADIUS, int(pos[1]) - RADIUS, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS, fill="blue", outline="blue")
 
@@ -151,10 +151,13 @@ def update_pos():
             pass
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3]
-            vec_proj = np.dot(vec_norm, Dpos) / np.dot(vec_norm, vec_norm) * vec_norm
-            Dpos = 2 * vec_proj - Dpos
+            vec_proj_pos = np.dot(vec_norm, Dpos) / np.dot(vec_norm, vec_norm) * vec_norm
+            vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
+            Dpos = 2 * vec_proj_pos - Dpos
+            vel = 2 * vec_proj_vel - vel
             Dpos *= (steps - counter) / (steps)
             Dpos *= (1 - DAMPING)
+            vel *= (1 - DAMPING)
             dist = np.linalg.norm(Dpos)
             steps = int(dist / DP) if dist > DP else 1
             dstep = Dpos / steps
