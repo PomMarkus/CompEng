@@ -16,7 +16,7 @@ DAMPING = 0.8
 
 # =============== Import and process objects from file ===============
 
-FILENAME = "objects.dat"
+FILENAME = "objectsBorder.dat"
 RADIUS = 10
 HEIGHT = 480
 WIDTH = 800
