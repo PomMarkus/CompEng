@@ -137,7 +137,7 @@ def update_pos():
     vel[0] += ACC_SCALE * ax * DT / 1000
     vel[1] += ACC_SCALE * ay * DT / 1000
     Dpos = np.array(vel) * DT / 1000
-    dist = np.norm(Dpos)
+    dist = np.linalg.norm(Dpos)
     steps = int(dist / DP)
     dstep = Dpos / steps
     counter = 0
@@ -154,7 +154,7 @@ def update_pos():
             Dpos = 2 * vec_proj - Dpos
             Dpos *= (steps - counter) / (steps)
             Dpos *= (1 - DAMPING)
-            dist = np.norm(Dpos)
+            dist = np.linalg.norm(Dpos)
             steps = int(dist / DP)
             dstep = Dpos / steps
             counter = 0
