@@ -149,7 +149,7 @@ def update_pos():
         security += 1
         if security > 1000:
             print("Security limit reached, breaking loop")
-            return
+            quit()
         temp_pos = pos + dstep
             
         if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] < 0):
