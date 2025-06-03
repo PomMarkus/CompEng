@@ -156,7 +156,7 @@ def update_pos():
             #hole - pull ball to center - vector to center in val_data
             pass
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
-            vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3]
+            vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3][::-1]
             vec_proj_pos = np.dot(vec_norm, Dpos) / np.dot(vec_norm, vec_norm) * vec_norm
             vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
             Dpos = - 2 * vec_proj_pos + Dpos
