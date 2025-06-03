@@ -13,6 +13,7 @@ STARTY = 100
 
 ACC_SCALE = 10
 DAMPING = 0.8
+VELTHRESHOLD = 3
 
 # =============== Import and process objects from file ===============
 
@@ -153,11 +154,11 @@ def update_pos():
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3]
             vec_proj_pos = np.dot(vec_norm, Dpos) / np.dot(vec_norm, vec_norm) * vec_norm
             vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
-            Dpos = 2 * vec_proj_pos - Dpos
-            vel = 2 * vec_proj_vel - vel
-            Dpos *= (steps - counter) / (steps)
-            Dpos *= (1 - DAMPING)
-            vel *= (1 - DAMPING)
+            Dpos = - 2 * vec_proj_pos + Dpos
+            vel = - 2 * vec_proj_vel + vel
+            # Dpos *= (steps - counter) / (steps)
+            Dpos += vec_proj_pos * DAMPING
+            vel += vec_proj_vel * DAMPING
             dist = np.linalg.norm(Dpos)
             steps = int(dist / DP) if dist > DP else 1
             dstep = Dpos / steps
@@ -165,6 +166,7 @@ def update_pos():
             continue
         
         pos += dstep
+        Dpos -= dstep
         counter += 1
             
 
