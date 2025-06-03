@@ -143,8 +143,13 @@ def update_pos():
     
     dstep = Dpos / steps
     counter = 0
+    security = 0
 
     while counter < steps:
+        security += 1
+        if security > 1000:
+            print("Security limit reached, breaking loop")
+            return
         temp_pos = pos + dstep
             
         if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] < 0):
