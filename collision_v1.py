@@ -12,8 +12,8 @@ STARTX = 60
 STARTY = 100
 
 ACC_SCALE = 10
-DAMPING = 0.8
-VELTHRESHOLD = 3
+DAMPING = 0.5
+VELTHRESHOLD = 1
 
 # =============== Import and process objects from file ===============
 
