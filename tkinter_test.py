@@ -1,6 +1,6 @@
 import tkinter as tk
 import numpy as np
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 FILENAME = "objects.dat"
 RADIUS = 10
@@ -112,16 +112,16 @@ for obj in objects:
 # plt.show()
 
 # Downsample for clarity (optional, otherwise plot will be very dense)
-# step = 1  # plot every 10th pixel
-# Y, X = np.mgrid[0:data.shape[0]:step, 0:data.shape[1]:step]
-# U = data[::step, ::step, 2]  # x-component
-# V = data[::step, ::step, 1]  # y-component
+step = 1  # plot every 10th pixel
+Y, X = np.mgrid[0:data.shape[0]:step, 0:data.shape[1]:step]
+U = data[::step, ::step, 2]  # x-component
+V = data[::step, ::step, 1]  # y-component
 
-# plt.figure(figsize=(10, 6))
-# plt.quiver(X, Y, U, V, angles='xy', scale_units='xy', scale=1, color='red')
-# plt.gca().invert_yaxis()  # To match image coordinates
-# plt.title("Gradient Field (from data[:,:,1] and data[:,:,2])")
-# plt.show()
+plt.figure(figsize=(10, 6))
+plt.quiver(X, Y, U, V, angles='xy', scale_units='xy', scale=1, color='red')
+plt.gca().invert_yaxis()  # To match image coordinates
+plt.title("Gradient Field (from data[:,:,1] and data[:,:,2])")
+plt.show()
 
 window = tk.Tk()
 window.title("Game map")
