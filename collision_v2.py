@@ -137,11 +137,10 @@ def update_pos():
     ax, ay = - current_acc['x'], current_acc['y']
     vel[0] += ACC_SCALE * ax * DT / 1000
     vel[1] += ACC_SCALE * ay * DT / 1000
-    Dpos = np.array(vel) * DT / 1000
-    dist = np.linalg.norm(Dpos)
+    dist = np.linalg.norm(np.array(vel) * DT / 1000)
     steps = int(dist / DP) if dist > DP else 1
-    
     dstep = Dpos / steps
+
     counter = 0
 
     while counter < steps:
@@ -152,22 +151,20 @@ def update_pos():
             pass
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3]
-            vec_proj_pos = -np.dot(vec_norm, Dpos) / np.dot(vec_norm, vec_norm) * vec_norm
-            vec_proj_vel = -np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
-            Dpos = 2 * vec_proj_pos + Dpos
-            vel = 2 * vec_proj_vel + vel
-            Dpos *= (steps - counter) / (steps)
-            Dpos *= (1 - DAMPING)
+            vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
+            vel = - 2 * vec_proj_vel + vel
             vel -= vec_proj_vel * DAMPING
-            dist = np.linalg.norm(Dpos)
-            steps = int(dist / DP) if dist > DP else 1
-            dstep = Dpos / steps
-            counter = 0
-            continue
-        
-        pos += dstep
-        counter += 1
-            
+            Dpos = np.array(vel) * DT / 1000
+            temp_norm = np.linalg.norm(Dpos)
+            dist * (steps - counter) / (steps)
+
+
+
+    # while dist > np.linalg.norm(dstep):
+    #     temp_pos = pos + dstep
+    #     dist -= np.linalg.norm(dstep)
+
+    
 
     canvas.coords(ball, int(pos[0]) - RADIUS, int(pos[1]) - RADIUS, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS)
 
