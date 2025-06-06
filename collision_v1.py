@@ -1,39 +1,41 @@
 import tkinter as tk
 import numpy as np
-from mpu6050 import mpu6050
-import time
+# from mpu6050 import mpu6050
+# import time
 
 RADIUS = 10
 HEIGHT = 480
 WIDTH = 800
 DT = 50
 DP = 0.1
-STARTX = 60
-STARTY = 100
-
 ACC_SCALE = 10
 DAMPING = 0.5
 VELTHRESHOLD = 1
 
 # =============== Import and process objects from file ===============
 
-FILENAME = "objectsBorder.dat"
+FILENAME = "map_v1.dat"
 RADIUS = 10
 HEIGHT = 480
 WIDTH = 800
 
 objects = []
+pressed_keys = set()
 
 with open(FILENAME, "r") as f:
     for line in f:
-        objects.append(line.strip().split("\t"))
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        objects.append(line.split("\t"))
+
 
 # 2D np array
 val_data = np.zeros((HEIGHT, WIDTH, 3))
 
 # Fill area of objects
 for obj in objects:
-    if obj[0] == 'r':
+    if obj[0] == 'w':
         # Rectangle coordinates: (x1, y1, x2, y2)
         x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
         val_data[y1:y2, x1:x2, 0] = 2 # pixle occupied
@@ -49,7 +51,7 @@ for obj in objects:
 
 # Fill area of shifted rectangles
 for obj in objects:
-    if obj[0] == 'r':
+    if obj[0] == 'w':
         # Rectangle coordinates: (x1, y1, x2, y2)
         x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
         Y, X = np.ogrid[:HEIGHT, :WIDTH]
@@ -84,7 +86,7 @@ circle = np.stack((circle, (idx[0] - RADIUS) * circle / RADIUS, (idx[1]- RADIUS)
 
 # Fill cirle areas at the corners
 for obj in objects:
-    if obj[0] == 'r':
+    if obj[0] == 'w':
         # Rectangle coordinates: (x1, y1, x2, y2)
         x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
 
@@ -104,37 +106,64 @@ for obj in objects:
 
 # ====================================================================
 
-sensor = mpu6050(0x68)
+# sensor = mpu6050(0x68)
 
 window = tk.Tk()
 window.title("Game map")
 window.geometry("800x480")
-window.attributes('-fullscreen', True)
+# window.attributes('-fullscreen', True)
 window.focus_force()
 
 canvas = tk.Canvas(window, width=window.winfo_screenwidth(), height=window.winfo_screenheight(), bg="white")
 canvas.pack(fill=tk.BOTH, expand=True)
 
 for obj in objects:
-    if obj[0] == 'r':
+    if obj[0] == 'w':
         # Draw a rectangle (x1, y1, x2, y2)
         canvas.create_rectangle(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="black", outline="black")
-    elif obj[0] == 'o':
+    elif obj[0] == 'h':
         # Draw an oval (x1, y1, x2, y2)
-        canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="black", outline="black")
+        canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="red", outline="red")
+    elif obj[0] == 'c':
+        # Draw an oval (x1, y1, x2, y2)
+        canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="green", outline="green")
+    elif obj[0] == 's':
+        # Draw an oval (x1, y1, x2, y2)
+        pos = np.array([int(obj[1]) + 10, int(obj[2]) + 10], dtype=float)
+        # canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="blue", outline="blue")
 
 
-pos = np.array([STARTX, STARTY], dtype=float)
+
 vel = np.array([0, 0], dtype=float)
 
 ball = canvas.create_oval(int(pos[0]) - RADIUS, int(pos[1]) - RADIUS, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS, fill="blue", outline="blue")
+
+def on_key_press(event):
+    pressed_keys.add(event.keysym)
+
+def on_key_release(event):
+    pressed_keys.discard(event.keysym)
 
 def update_pos():
     window.after(DT, update_pos)
     global pos, vel
 
-    current_acc = sensor.get_accel_data()
-    ax, ay = - current_acc['x'], current_acc['y']
+    # current_acc = sensor.get_accel_data()
+    # ax, ay = - current_acc['x'], current_acc['y']
+    if "Left" in pressed_keys:
+        ax= -10
+    elif "Right" in pressed_keys:
+        ax= 10
+    else:
+        ax = 0
+        
+    if "Down" in pressed_keys:
+        ay= 10
+    elif "Up" in pressed_keys:
+        ay=-10
+    else:
+        ay = 0
+
     vel[0] += ACC_SCALE * ax * DT / 1000
     vel[1] += ACC_SCALE * ay * DT / 1000
     Dpos = np.array(vel) * DT / 1000
@@ -174,6 +203,7 @@ def update_pos():
             dstep = Dpos / steps
             counter = 0
             continue
+            # cancel minimal speed
         
         pos += dstep
         Dpos -= dstep
@@ -190,6 +220,8 @@ def end_fullscreen(event=None):
     window.attributes('-fullscreen', False)    
 
 window.bind("<Escape>", end_fullscreen)
+window.bind("<KeyPress>", on_key_press)
+window.bind("<KeyRelease>", on_key_release)
 
 window.after(DT, update_pos)
 window.after(100, go_fullscreen)
