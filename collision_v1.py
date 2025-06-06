@@ -6,7 +6,7 @@ import time
 RADIUS = 10
 HEIGHT = 480
 WIDTH = 800
-DT = 100
+DT = 50
 DP = 0.1
 STARTX = 60
 STARTY = 100
@@ -157,10 +157,15 @@ def update_pos():
             pass
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3][::-1]
-            vec_proj_pos = np.dot(vec_norm, Dpos) / np.dot(vec_norm, vec_norm) * vec_norm
+            pos_dot_product = np.dot(vec_norm, Dpos)
+            vec_proj_pos = pos_dot_product / np.dot(vec_norm, vec_norm) * vec_norm
             vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
-            Dpos = - 2 * vec_proj_pos + Dpos
-            vel = - 2 * vec_proj_vel + vel
+            if (pos_dot_product < 0):
+                Dpos = - 2 * vec_proj_pos + Dpos
+                vel = - 2 * vec_proj_vel + vel
+            else:
+                Dpos = 2 * vec_proj_pos - Dpos
+                vel = 2 * vec_proj_vel - vel
             # Dpos *= (steps - counter) / (steps)
             Dpos += vec_proj_pos * DAMPING
             vel += vec_proj_vel * DAMPING
