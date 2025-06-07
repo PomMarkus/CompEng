@@ -6,11 +6,11 @@ import numpy as np
 RADIUS = 10
 HEIGHT = 480
 WIDTH = 800
-DT = 50
+DT = 20
 DP = 0.1
-ACC_SCALE = 10
-DAMPING = 0.5
-VELTHRESHOLD = 1
+ACC_SCALE = 30
+DAMPING = 0.8
+# VELTHRESHOLD = 1
 
 # =============== Import and process objects from file ===============
 
@@ -187,23 +187,28 @@ def update_pos():
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3][::-1]
             pos_dot_product = np.dot(vec_norm, Dpos)
-            vec_proj_pos = pos_dot_product / np.dot(vec_norm, vec_norm) * vec_norm
-            vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
             if (pos_dot_product < 0):
+                vec_proj_pos = pos_dot_product / np.dot(vec_norm, vec_norm) * vec_norm
+                vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
                 Dpos = - 2 * vec_proj_pos + Dpos
                 vel = - 2 * vec_proj_vel + vel
+
+                # Dpos *= (steps - counter) / (steps)
+                Dpos += vec_proj_pos * DAMPING
+                vel += vec_proj_vel * DAMPING
+                dist = np.linalg.norm(Dpos)
+                steps = int(dist / DP) if dist > DP else 1
+                dstep = Dpos / steps
+                counter = 0
+                continue
+                # cancel minimal speed
+
             else:
-                Dpos = 2 * vec_proj_pos - Dpos
-                vel = 2 * vec_proj_vel - vel
-            # Dpos *= (steps - counter) / (steps)
-            Dpos += vec_proj_pos * DAMPING
-            vel += vec_proj_vel * DAMPING
-            dist = np.linalg.norm(Dpos)
-            steps = int(dist / DP) if dist > DP else 1
-            dstep = Dpos / steps
-            counter = 0
-            continue
-            # cancel minimal speed
+                shift = vec_norm / np.linalg.norm(vec_norm) * DP
+                pos += shift
+                Dpos -= shift
+                counter += 1
+                continue
         
         pos += dstep
         Dpos -= dstep
@@ -224,6 +229,6 @@ window.bind("<KeyPress>", on_key_press)
 window.bind("<KeyRelease>", on_key_release)
 
 window.after(DT, update_pos)
-window.after(100, go_fullscreen)
+# window.after(100, go_fullscreen)
 
 window.mainloop()
