@@ -21,14 +21,18 @@ HEIGHT = 480
 WIDTH = 800
 
 objects = []
+start_point = np.array([0, 0], dtype=float)
 pressed_keys = set()
 
 with open(FILENAME, "r") as f:
     for line in f:
         line = line.strip()
         if not line or line.startswith("#"):
-            continue
-        objects.append(line.split("\t"))
+            pass
+        elif line.startswith("s"):
+            start_point = np.array([int(line.split("\t")[1]), int(line.split("\t")[2])], dtype=float)
+        else: 
+            objects.append(line.split("\t"))
 
 
 # 2D np array
@@ -57,10 +61,6 @@ for obj in objects:
         mask = ((X - (x1 + x2) / 2) ** 2) / ((x2 - x1) / 2) ** 2 + ((Y - (y1 + y2) / 2) ** 2) / ((y2 - y1) / 2) ** 2 <= 1
         # Set the pixels inside the checkoint to -2
         val_data[mask, 0] = -2
-    
-    # save the startpoint
-    elif obj[0] == 's':
-        pos = np.array([x1 + 10, y1 + 10], dtype=float)
 
 # Create template mask for whole circle for wallcorners
 circle = np.zeros((2*RADIUS + 1, 2*RADIUS + 1))
@@ -147,7 +147,7 @@ for obj in objects:
         # canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="blue", outline="blue")
 
 
-
+pos = start_point.copy()
 vel = np.array([0, 0], dtype=float)
 
 ball = canvas.create_oval(int(pos[0]) - RADIUS, int(pos[1]) - RADIUS, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS, fill="blue", outline="blue")
