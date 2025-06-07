@@ -1,6 +1,6 @@
 import tkinter as tk
 import numpy as np
-import matplotlib.pyplot as plt	
+# import matplotlib.pyplot as plt	
 # from mpu6050 import mpu6050
 # import time
 
@@ -36,85 +36,86 @@ val_data = np.zeros((HEIGHT, WIDTH, 3))
 
 # Fill area of objects
 for obj in objects:
+    x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
+
+    # wall pxl to 2
     if obj[0] == 'w':
-        # Rectangle coordinates: (x1, y1, x2, y2)
-        x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
         val_data[y1:y2, x1:x2, 0] = 2 # pixle occupied
 
-    elif obj[0] == 'o':
-        # Oval "corner" coordinates (x1, y1, x2, y2)
-        x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
-        # Create a mask for the oval
+    # hole pxl to -1 
+    elif obj[0] == 'h':
+        # Create a mask for defining the pxl inside the circle
         Y, X = np.ogrid[:HEIGHT, :WIDTH]
         mask = ((X - (x1 + x2) / 2) ** 2) / ((x2 - x1) / 2) ** 2 + ((Y - (y1 + y2) / 2) ** 2) / ((y2 - y1) / 2) ** 2 <= 1
-        # Set the pixels inside the oval to 1
-        val_data[mask, 0] = -1 # pixle marked as hole
+        # Set the pixels inside the circle to -1
+        val_data[mask, 0] = -1
     
+    # Checkpoint pxl to -2 
     elif obj[0] == 'c':
-        # Oval "corner" coordinates (x1, y1, x2, y2)
-        x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
-        # Create a mask for the oval
+        # Create a mask for defining the pxl inside the circle
         Y, X = np.ogrid[:HEIGHT, :WIDTH]
         mask = ((X - (x1 + x2) / 2) ** 2) / ((x2 - x1) / 2) ** 2 + ((Y - (y1 + y2) / 2) ** 2) / ((y2 - y1) / 2) ** 2 <= 1
-        # Set the pixels inside the oval to 1
-        val_data[mask, 0] = -2 # pixle marked as hole
+        # Set the pixels inside the checkoint to -2
+        val_data[mask, 0] = -2
     
+    # save the startpoint
     elif obj[0] == 's':
-        pos = np.array([int(obj[1]) + 10, int(obj[2]) + 10], dtype=float)
+        pos = np.array([x1 + 10, y1 + 10], dtype=float)
 
-# Fill area of shifted rectangles
-for obj in objects:
-    if obj[0] == 'w':
-        # Rectangle coordinates: (x1, y1, x2, y2)
-        x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
-        Y, X = np.ogrid[:HEIGHT, :WIDTH]
-        # Create rectangle above
-        subdata = val_data[y1-RADIUS:y1, x1:x2]
-        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0])
-        subdata[subdata[:,:, 0] != 2] += np.array([0, -1, 0])
-        val_data[y1-RADIUS:y1, x1:x2] = subdata
-        # Create rectangle below
-        subdata = val_data[y2:y2+RADIUS, x1:x2]
-        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0])
-        subdata[subdata[:,:, 0] != 2] += np.array([0, 1, 0])
-        val_data[y2:y2+RADIUS, x1:x2] = subdata
-        # Create rectangle left
-        subdata = val_data[y1:y2, x1-RADIUS:x1]
-        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0])
-        subdata[subdata[:,:, 0] != 2] += np.array([0, 0, -1])
-        val_data[y1:y2, x1-RADIUS:x1] = subdata
-        # Create rectangle right
-        subdata = val_data[y1:y2, x2:x2+RADIUS]
-        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0])
-        subdata[subdata[:,:, 0] != 2] += np.array([0, 0, 1])
-        val_data[y1:y2, x2:x2+RADIUS] = subdata
-
-# Create corner circle 
+# Create template mask for whole circle for wallcorners
 circle = np.zeros((2*RADIUS + 1, 2*RADIUS + 1))
 Y, X = np.ogrid[:2*RADIUS + 1, :2*RADIUS + 1]
 mask = ((X - RADIUS) ** 2) + ((Y - RADIUS) ** 2) <= RADIUS ** 2
-circle[mask] = 1 # pixle occupied
+circle[mask] = 1 # corner surroundings of walls are also marked as such
+
+# generating a 2D array e.g. (-2, -1, 0, 1, 2) for x and y
 idx = np.indices((2*RADIUS + 1, 2*RADIUS + 1))
 circle = np.stack((circle, (idx[0] - RADIUS) * circle / RADIUS, (idx[1]- RADIUS) * circle / RADIUS), axis=-1)
 
-# Fill cirle areas at the corners
+# Fill area of shifted rectangles with 1 and add the normalvector for the rebouncing calculation
 for obj in objects:
-    if obj[0] == 'w':
-        # Rectangle coordinates: (x1, y1, x2, y2)
-        x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
 
-        # Insert circle segments
+    if obj[0] == 'w':
+        x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
+        Y, X = np.ogrid[:HEIGHT, :WIDTH]
+
+        # Create rectangle above - normalvector points upwards
+        subdata = val_data[y1-RADIUS:y1, x1:x2]
+        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0]) # making sure, that the area around a wall element is marked as surrounding area only once
+        subdata[subdata[:,:, 0] != 2] += np.array([0, -1, 0]) # add the normalvector
+        val_data[y1-RADIUS:y1, x1:x2] = subdata
+
+        # Create rectangle below - normalvector points downwards
+        subdata = val_data[y2:y2+RADIUS, x1:x2]
+        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0]) # making sure, that the area around a wall element is marked as surrounding area only once
+        subdata[subdata[:,:, 0] != 2] += np.array([0, 1, 0]) # add the normalvector
+        val_data[y2:y2+RADIUS, x1:x2] = subdata
+
+        # Create rectangle left - normalvector points left
+        subdata = val_data[y1:y2, x1-RADIUS:x1]
+        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0]) # making sure, that the area around a wall element is marked as surrounding area only once
+        subdata[subdata[:,:, 0] != 2] += np.array([0, 0, -1]) # add the normalvector
+        val_data[y1:y2, x1-RADIUS:x1] = subdata
+
+        # Create rectangle right - normalvector poibts right
+        subdata = val_data[y1:y2, x2:x2+RADIUS]
+        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0]) # making sure, that the area around a wall element is marked as surrounding area only once
+        subdata[subdata[:,:, 0] != 2] += np.array([0, 0, 1]) # add the normalvector
+        val_data[y1:y2, x2:x2+RADIUS] = subdata
+
+
+        # Insert circle sector
         # Top left corner
-        mask = val_data[y1-RADIUS:y1, x1-RADIUS:x1, 0] == 0
+        mask = val_data[y1-RADIUS:y1, x1-RADIUS:x1, 0] == 0 # mask for all points within the circle sector at the top left corner
         val_data[y1-RADIUS:y1, x1-RADIUS:x1][mask] = circle[:RADIUS, :RADIUS][mask]
         # Top right corner
-        mask = val_data[y1-RADIUS:y1, x2:x2+RADIUS, 0] == 0
+        mask = val_data[y1-RADIUS:y1, x2:x2+RADIUS, 0] == 0 # mask for all points within the circle sector at the top right corner
         val_data[y1-RADIUS:y1, x2:x2+RADIUS][mask] = circle[:RADIUS, RADIUS + 1:][mask]
         # Bottom left corner
-        mask = val_data[y2:y2+RADIUS, x1-RADIUS:x1, 0] == 0
+        mask = val_data[y2:y2+RADIUS, x1-RADIUS:x1, 0] == 0 # mask for all points within the circle sector at the bottom left corner
         val_data[y2:y2+RADIUS, x1-RADIUS:x1][mask] = circle[RADIUS + 1:, :RADIUS][mask]
         # Bottom right corner
-        mask = val_data[y2:y2+RADIUS, x2:x2+RADIUS, 0] == 0
+        mask = val_data[y2:y2+RADIUS, x2:x2+RADIUS, 0] == 0 # mask for all points within the circle sector at the bottom right corner
         val_data[y2:y2+RADIUS, x2:x2+RADIUS][mask] = circle[RADIUS + 1:, RADIUS + 1:][mask]
 
 # ====================================================================
@@ -131,17 +132,18 @@ canvas = tk.Canvas(window, width=window.winfo_screenwidth(), height=window.winfo
 canvas.pack(fill=tk.BOTH, expand=True)
 
 for obj in objects:
+    
     if obj[0] == 'w':
-        # Draw a rectangle (x1, y1, x2, y2)
+        # Draw a rectangle
         canvas.create_rectangle(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="black", outline="black")
     elif obj[0] == 'h':
-        # Draw an oval (x1, y1, x2, y2)
+        # Draw an oval
         canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="red", outline="red")
     elif obj[0] == 'c':
-        # Draw an oval (x1, y1, x2, y2)
+        # Draw an oval
         canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="green", outline="green")
     # elif obj[0] == 's':
-        # Draw an oval (x1, y1, x2, y2)
+        # Draw an oval
         # canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="blue", outline="blue")
 
 
@@ -245,5 +247,5 @@ window.after(DT, update_pos)
 # window.after(100, go_fullscreen)
 
 window.mainloop()
-plt.imshow(2 - val_data[:,:,0], cmap='gray', vmin=0, vmax=2)
-plt.show()
+# plt.imshow(2 - val_data[:,:,0], cmap='gray', vmin=0, vmax=2)
+# plt.show()
