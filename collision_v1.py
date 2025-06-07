@@ -1,5 +1,6 @@
 import tkinter as tk
 import numpy as np
+import matplotlib.pyplot as plt	
 # from mpu6050 import mpu6050
 # import time
 
@@ -244,3 +245,5 @@ window.after(DT, update_pos)
 # window.after(100, go_fullscreen)
 
 window.mainloop()
+plt.imshow(2 - val_data[:,:,0], cmap='gray', vmin=0, vmax=2)
+plt.show()
