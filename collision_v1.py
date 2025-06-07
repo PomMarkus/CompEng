@@ -48,6 +48,18 @@ for obj in objects:
         mask = ((X - (x1 + x2) / 2) ** 2) / ((x2 - x1) / 2) ** 2 + ((Y - (y1 + y2) / 2) ** 2) / ((y2 - y1) / 2) ** 2 <= 1
         # Set the pixels inside the oval to 1
         val_data[mask, 0] = -1 # pixle marked as hole
+    
+    elif obj[0] == 'c':
+        # Oval "corner" coordinates (x1, y1, x2, y2)
+        x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
+        # Create a mask for the oval
+        Y, X = np.ogrid[:HEIGHT, :WIDTH]
+        mask = ((X - (x1 + x2) / 2) ** 2) / ((x2 - x1) / 2) ** 2 + ((Y - (y1 + y2) / 2) ** 2) / ((y2 - y1) / 2) ** 2 <= 1
+        # Set the pixels inside the oval to 1
+        val_data[mask, 0] = -2 # pixle marked as hole
+    
+    elif obj[0] == 's':
+        pos = np.array([int(obj[1]) + 10, int(obj[2]) + 10], dtype=float)
 
 # Fill area of shifted rectangles
 for obj in objects:
@@ -57,26 +69,26 @@ for obj in objects:
         Y, X = np.ogrid[:HEIGHT, :WIDTH]
         # Create rectangle above
         subdata = val_data[y1-RADIUS:y1, x1:x2]
-        subdata[subdata[:,:, 0] == 0] = np.array([1, 0, 0])
+        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0])
         subdata[subdata[:,:, 0] != 2] += np.array([0, -1, 0])
         val_data[y1-RADIUS:y1, x1:x2] = subdata
         # Create rectangle below
         subdata = val_data[y2:y2+RADIUS, x1:x2]
-        subdata[subdata[:,:, 0] == 0] = np.array([1, 0, 0])
+        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0])
         subdata[subdata[:,:, 0] != 2] += np.array([0, 1, 0])
         val_data[y2:y2+RADIUS, x1:x2] = subdata
         # Create rectangle left
         subdata = val_data[y1:y2, x1-RADIUS:x1]
-        subdata[subdata[:,:, 0] == 0] = np.array([1, 0, 0])
+        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0])
         subdata[subdata[:,:, 0] != 2] += np.array([0, 0, -1])
         val_data[y1:y2, x1-RADIUS:x1] = subdata
         # Create rectangle right
         subdata = val_data[y1:y2, x2:x2+RADIUS]
-        subdata[subdata[:,:, 0] == 0] = np.array([1, 0, 0])
+        subdata[subdata[:,:, 0] <= 0] = np.array([1, 0, 0])
         subdata[subdata[:,:, 0] != 2] += np.array([0, 0, 1])
         val_data[y1:y2, x2:x2+RADIUS] = subdata
 
-# Create circle 
+# Create corner circle 
 circle = np.zeros((2*RADIUS + 1, 2*RADIUS + 1))
 Y, X = np.ogrid[:2*RADIUS + 1, :2*RADIUS + 1]
 mask = ((X - RADIUS) ** 2) + ((Y - RADIUS) ** 2) <= RADIUS ** 2
@@ -127,9 +139,8 @@ for obj in objects:
     elif obj[0] == 'c':
         # Draw an oval (x1, y1, x2, y2)
         canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="green", outline="green")
-    elif obj[0] == 's':
+    # elif obj[0] == 's':
         # Draw an oval (x1, y1, x2, y2)
-        pos = np.array([int(obj[1]) + 10, int(obj[2]) + 10], dtype=float)
         # canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="blue", outline="blue")
 
 
@@ -181,10 +192,7 @@ def update_pos():
             quit()
         temp_pos = pos + dstep
             
-        if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] < 0):
-            #hole - pull ball to center - vector to center in val_data
-            pass
-        elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
+        if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3][::-1]
             pos_dot_product = np.dot(vec_norm, Dpos)
             if (pos_dot_product < 0):
@@ -209,6 +217,10 @@ def update_pos():
                 Dpos -= shift
                 counter += 1
                 continue
+        
+        elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -1):
+            #hole - pull ball to center - vector to center in val_data
+            pass
         
         pos += dstep
         Dpos -= dstep
