@@ -1,10 +1,12 @@
+#  TODO:
+#  - define Radien in file
+
 import tkinter as tk
 import numpy as np
 # import matplotlib.pyplot as plt	
 # from mpu6050 import mpu6050
 # import time
 
-RADIUS = 10
 HEIGHT = 480
 WIDTH = 800
 DT = 20
@@ -17,12 +19,14 @@ DAMPING = 0.8
 
 FILENAME = "map_v1.dat"
 RADIUS = 10
+HOLERADIUS = 13
 HEIGHT = 480
 WIDTH = 800
 
 objects = []
 start_point = np.array([0, 0], dtype=float)
 pressed_keys = set()
+
 
 with open(FILENAME, "r") as f:
     for line in f:
@@ -38,39 +42,49 @@ with open(FILENAME, "r") as f:
 # 2D np array
 val_data = np.zeros((HEIGHT, WIDTH, 3))
 
-# Fill area of objects
-for obj in objects:
-    x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
-
-    # wall pxl to 2
-    if obj[0] == 'w':
-        val_data[y1:y2, x1:x2, 0] = 2 # pixle occupied
-
-    # hole pxl to -1 
-    elif obj[0] == 'h':
-        # Create a mask for defining the pxl inside the circle
-        Y, X = np.ogrid[:HEIGHT, :WIDTH]
-        mask = ((X - (x1 + x2) / 2) ** 2) / ((x2 - x1) / 2) ** 2 + ((Y - (y1 + y2) / 2) ** 2) / ((y2 - y1) / 2) ** 2 <= 1
-        # Set the pixels inside the circle to -1
-        val_data[mask, 0] = -1
-    
-    # Checkpoint pxl to -2 
-    elif obj[0] == 'c':
-        # Create a mask for defining the pxl inside the circle
-        Y, X = np.ogrid[:HEIGHT, :WIDTH]
-        mask = ((X - (x1 + x2) / 2) ** 2) / ((x2 - x1) / 2) ** 2 + ((Y - (y1 + y2) / 2) ** 2) / ((y2 - y1) / 2) ** 2 <= 1
-        # Set the pixels inside the checkoint to -2
-        val_data[mask, 0] = -2
-
-# Create template mask for whole circle for wallcorners
-circle = np.zeros((2*RADIUS + 1, 2*RADIUS + 1))
-Y, X = np.ogrid[:2*RADIUS + 1, :2*RADIUS + 1]
-mask = ((X - RADIUS) ** 2) + ((Y - RADIUS) ** 2) <= RADIUS ** 2
-circle[mask] = 1 # corner surroundings of walls are also marked as such
+# Create template mask for circle for the holes
+circle_hole = np.zeros((HOLERADIUS * 2, HOLERADIUS * 2))
+Y, X = np.ogrid[:HOLERADIUS * 2, :HOLERADIUS * 2]
+mask_hole = ((X - HOLERADIUS + 0.5) ** 2) + ((Y - HOLERADIUS + 0.5) ** 2) <= HOLERADIUS ** 2
+circle_hole[mask_hole] = -1 # corner surroundings of walls are also marked as such
 
 # generating a 2D array e.g. (-2, -1, 0, 1, 2) for x and y
-idx = np.indices((2*RADIUS + 1, 2*RADIUS + 1))
-circle = np.stack((circle, (idx[0] - RADIUS) * circle / RADIUS, (idx[1]- RADIUS) * circle / RADIUS), axis=-1)
+idx = np.indices((HOLERADIUS * 2, HOLERADIUS * 2)) - HOLERADIUS
+idx[idx >=0] += 1
+circle_hole = np.stack((circle_hole, (idx[0]) * circle_hole / RADIUS, (idx[1]) * circle_hole / RADIUS), axis=-1)
+
+norm_squared = np.sum(circle_hole[:, :, 1:3] ** 2, axis=-1, keepdims=True)
+norm_squared[norm_squared == 0] = 1e-1
+circle_hole[:, :, 1:3] /= norm_squared**2
+
+inner_mask = ((X - HOLERADIUS + 0.5) ** 2) + ((Y - HOLERADIUS + 0.5) ** 2) <= (HOLERADIUS - RADIUS) ** 2
+circle_hole[inner_mask, 0] = -2
+
+
+# Fill area of circles
+for obj in objects:
+    # Wall pxl to 2
+    if obj[0] == 'w':
+        x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
+        val_data[y1:y2, x1:x2, 0] = 2 # pixle occupied: 2
+
+    # hole pxl to -1 
+    elif obj[0] == 'h': # maybe remove this because of redundancy
+        x, y = int(obj[1]), int(obj[2])
+        
+        subdata = val_data[y - HOLERADIUS:y + HOLERADIUS, x - HOLERADIUS:x + HOLERADIUS]
+        subdata[mask_hole, :] = circle_hole[mask_hole, :]
+        val_data[y - HOLERADIUS:y + HOLERADIUS, x - HOLERADIUS:x + HOLERADIUS] = subdata # fill the hole with the circle_hole template
+    
+    # Checkpoint pxl to -2 
+    # elif obj[0] == 'c':
+    #     x, y = int(obj[1]), int(obj[2])
+    #     # Create a mask for defining the pxl inside the circle
+    #     Y, X = np.ogrid[:HEIGHT, :WIDTH]
+    #     mask_checkpoint = ((X - x ** 2) / x ** 2) + ((Y - y) ** 2) / (y) ** 2 <= 1
+    #     # Set the pixels inside the checkoint to -3
+    #     val_data[mask_checkpoint, 0] = -3
+        
 
 # Fill area of shifted rectangles with 1 and add the normalvector for the rebouncing calculation
 for obj in objects:
@@ -104,19 +118,35 @@ for obj in objects:
         val_data[y1:y2, x2:x2+RADIUS] = subdata
 
 
+# Create template mask for whole circle for wallcorners
+circle_wall = np.zeros((2*RADIUS + 1, 2*RADIUS + 1))
+Y, X = np.ogrid[:2*RADIUS + 1, :2*RADIUS + 1]
+mask_corner = ((X - RADIUS) ** 2) + ((Y - RADIUS) ** 2) <= RADIUS ** 2
+circle_wall[mask_corner] = 1 # corner surroundings of walls are also marked as such
+
+# generating a 2D array e.g. (-2, -1, 0, 1, 2) for x and y
+idx = np.indices((2*RADIUS + 1, 2*RADIUS + 1))
+circle_wall = np.stack((circle_wall, (idx[0] - RADIUS) * circle_wall / RADIUS, (idx[1]- RADIUS) * circle_wall / RADIUS), axis=-1)
+
+
+for obj in objects:
+    if obj[0] == 'w':
+        x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
         # Insert circle sector
         # Top left corner
-        mask = val_data[y1-RADIUS:y1, x1-RADIUS:x1, 0] == 0 # mask for all points within the circle sector at the top left corner
-        val_data[y1-RADIUS:y1, x1-RADIUS:x1][mask] = circle[:RADIUS, :RADIUS][mask]
+        mask = val_data[y1-RADIUS:y1, x1-RADIUS:x1, 0] <= 0 # mask for all points within the circle sector at the top left corner
+
+        val_data[y1-RADIUS:y1, x1-RADIUS:x1][mask] = circle_wall[:RADIUS, :RADIUS][mask]
         # Top right corner
-        mask = val_data[y1-RADIUS:y1, x2:x2+RADIUS, 0] == 0 # mask for all points within the circle sector at the top right corner
-        val_data[y1-RADIUS:y1, x2:x2+RADIUS][mask] = circle[:RADIUS, RADIUS + 1:][mask]
+        mask = val_data[y1-RADIUS:y1, x2:x2+RADIUS, 0] <= 0 # mask for all points within the circle sector at the top right corner
+        val_data[y1-RADIUS:y1, x2:x2+RADIUS][mask] = circle_wall[:RADIUS, RADIUS + 1:][mask]
         # Bottom left corner
-        mask = val_data[y2:y2+RADIUS, x1-RADIUS:x1, 0] == 0 # mask for all points within the circle sector at the bottom left corner
-        val_data[y2:y2+RADIUS, x1-RADIUS:x1][mask] = circle[RADIUS + 1:, :RADIUS][mask]
+        mask = val_data[y2:y2+RADIUS, x1-RADIUS:x1, 0] <= 0 # mask for all points within the circle sector at the bottom left corner
+        val_data[y2:y2+RADIUS, x1-RADIUS:x1][mask] = circle_wall[RADIUS + 1:, :RADIUS][mask]
         # Bottom right corner
-        mask = val_data[y2:y2+RADIUS, x2:x2+RADIUS, 0] == 0 # mask for all points within the circle sector at the bottom right corner
-        val_data[y2:y2+RADIUS, x2:x2+RADIUS][mask] = circle[RADIUS + 1:, RADIUS + 1:][mask]
+        mask = val_data[y2:y2+RADIUS, x2:x2+RADIUS, 0] <= 0 # mask for all points within the circle sector at the bottom right corner
+        val_data[y2:y2+RADIUS, x2:x2+RADIUS][mask] = circle_wall[RADIUS + 1:, RADIUS + 1:][mask]
+    
 
 # ====================================================================
 
@@ -135,13 +165,13 @@ for obj in objects:
     
     if obj[0] == 'w':
         # Draw a rectangle
-        canvas.create_rectangle(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="black", outline="black")
+        canvas.create_rectangle(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="brown", outline="brown")
     elif obj[0] == 'h':
         # Draw an oval
-        canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="red", outline="red")
+        canvas.create_oval(int(obj[1]) - HOLERADIUS, int(obj[2]) - HOLERADIUS, int(obj[1]) + HOLERADIUS, int(obj[2]) + HOLERADIUS, fill="black", outline="red")
     elif obj[0] == 'c':
         # Draw an oval
-        canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="green", outline="green")
+        canvas.create_oval(int(obj[1]) - HOLERADIUS, int(obj[2]) - HOLERADIUS, int(obj[1]) + HOLERADIUS, int(obj[2]) + HOLERADIUS, fill="green", outline="green")
     # elif obj[0] == 's':
         # Draw an oval
         # canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="blue", outline="blue")
@@ -150,7 +180,7 @@ for obj in objects:
 pos = start_point.copy()
 vel = np.array([0, 0], dtype=float)
 
-ball = canvas.create_oval(int(pos[0]) - RADIUS, int(pos[1]) - RADIUS, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS, fill="blue", outline="blue")
+ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS, fill="blue", outline="blue")
 
 def on_key_press(event):
     pressed_keys.add(event.keysym)
@@ -183,6 +213,7 @@ def update_pos():
     Dpos = np.array(vel) * DT / 1000
     dist = np.linalg.norm(Dpos)
     steps = int(dist / DP) if dist > DP else 1
+    #print(f"Velocity: {vel}\r\b", end="")
     
     dstep = Dpos / steps
     counter = 0
@@ -220,17 +251,28 @@ def update_pos():
                 Dpos -= shift
                 counter += 1
                 continue
+        elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -2):
+            pos = start_point.copy()
+            vel = np.array([0, 0], dtype=float)
+            break
         
-        elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -1):
-            #hole - pull ball to center - vector to center in val_data
-            pass
         
         pos += dstep
         Dpos -= dstep
+            
         counter += 1
+
+    if (val_data[int(pos[1]), int(pos[0]), 0] == -1):
+        vel += val_data[int(pos[1]), int(pos[0]), 3:1:-1] * 20 * ACC_SCALE * DT / 1000
+        pos += val_data[int(pos[1]), int(pos[0]), 3:1:-1]
+        # Dpos = np.array(vel) * DT / 1000 * (steps - counter) / steps
+        
+    elif (val_data[int(pos[1]), int(pos[0]), 0] == -2):
+        pos = start_point.copy()
+        vel = np.array([0, 0], dtype=float)
             
 
-    canvas.coords(ball, int(pos[0]) - RADIUS, int(pos[1]) - RADIUS, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS)
+    canvas.coords(ball, int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS)
 
 def go_fullscreen():
     window.attributes('-fullscreen', True)
@@ -247,5 +289,19 @@ window.after(DT, update_pos)
 # window.after(100, go_fullscreen)
 
 window.mainloop()
-# plt.imshow(2 - val_data[:,:,0], cmap='gray', vmin=0, vmax=2)
+# plt.imshow(2 - circle_wall[:,:,0], cmap='gray', vmin=-3, vmax=2)
+# plt.show()
+
+# # Downsample for clarity (optional, otherwise plot will be very dense)
+# plot_data = val_data
+# step = 1  # plot every 10th pixel
+# Y, X = np.mgrid[0:plot_data.shape[0]:step, 0:plot_data.shape[1]:step]
+# U = plot_data[::step, ::step, 2]  # x-component
+# V = plot_data[::step, ::step, 1]  # y-component
+
+# plt.figure(figsize=(10, 6))
+# plt.quiver(X, Y, U, V, angles='xy', scale_units='xy', scale=1, color='red')
+# plt.gca().invert_yaxis()  # To match image coordinates
+# plt.title("Gradient Field (from data[:,:,1] and data[:,:,2])")
+# plt.axis('equal')
 # plt.show()
