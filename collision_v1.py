@@ -12,14 +12,14 @@ WIDTH = 800
 DT = 20
 DP = 0.1
 ACC_SCALE = 30
-DAMPING = 0.8
+DAMPING = 0.4
 # VELTHRESHOLD = 1
 
 # =============== Import and process objects from file ===============
 
 FILENAME = "map_v1.dat"
 RADIUS = 10
-HOLERADIUS = 13
+HOLERADIUS = 12
 HEIGHT = 480
 WIDTH = 800
 
@@ -165,10 +165,10 @@ for obj in objects:
     
     if obj[0] == 'w':
         # Draw a rectangle
-        canvas.create_rectangle(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="brown", outline="brown")
+        canvas.create_rectangle(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="#471F01", outline="#471F01")
     elif obj[0] == 'h':
         # Draw an oval
-        canvas.create_oval(int(obj[1]) - HOLERADIUS, int(obj[2]) - HOLERADIUS, int(obj[1]) + HOLERADIUS, int(obj[2]) + HOLERADIUS, fill="black", outline="red")
+        canvas.create_oval(int(obj[1]) - HOLERADIUS, int(obj[2]) - HOLERADIUS, int(obj[1]) + HOLERADIUS, int(obj[2]) + HOLERADIUS, fill="black", outline="lightgray")
     elif obj[0] == 'c':
         # Draw an oval
         canvas.create_oval(int(obj[1]) - HOLERADIUS, int(obj[2]) - HOLERADIUS, int(obj[1]) + HOLERADIUS, int(obj[2]) + HOLERADIUS, fill="green", outline="green")
@@ -252,7 +252,7 @@ def update_pos():
                 counter += 1
                 continue
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -2):
-            pos = start_point.copy()
+            pos = start_point.copy() # maybe delay
             vel = np.array([0, 0], dtype=float)
             break
         
@@ -263,13 +263,16 @@ def update_pos():
         counter += 1
 
     if (val_data[int(pos[1]), int(pos[0]), 0] == -1):
-        vel += val_data[int(pos[1]), int(pos[0]), 3:1:-1] * 20 * ACC_SCALE * DT / 1000
-        pos += val_data[int(pos[1]), int(pos[0]), 3:1:-1]
-        # Dpos = np.array(vel) * DT / 1000 * (steps - counter) / steps
+        vec_norm = val_data[int(pos[1]), int(pos[0]), 1:3][::-1]  # Normal vector (y, x) -> (x, y)
+        vec_tang = np.array([vec_norm[1], -vec_norm[0]])  # Tangential vector (90 degrees rotation)
+        vec_proj_vel_tang = np.dot(vec_tang, vel) / np.dot(vec_tang, vec_tang) * vec_tang
+        vel += vec_norm * 10
+        vel -= vec_proj_vel_tang * 0.3
+
         
-    elif (val_data[int(pos[1]), int(pos[0]), 0] == -2):
-        pos = start_point.copy()
-        vel = np.array([0, 0], dtype=float)
+    # elif (val_data[int(pos[1]), int(pos[0]), 0] == -2):
+    #     pos = start_point.copy()
+    #     vel = np.array([0, 0], dtype=float)
             
 
     canvas.coords(ball, int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS)
