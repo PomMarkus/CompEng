@@ -1,18 +1,61 @@
 #  TODO:
 #  - define Radien in file
 
+import json
 import tkinter as tk
 import numpy as np
+
+with open("config.json") as f:
+    config = json.load(f)
+
+control_mode = config.get("control", "keyboard")  # Default to keyboard if not specified
+
+if control_mode not in ["keyboard", "mpu6050"]:
+    raise ValueError(f"Invalid control mode: {control_mode}. Choose 'keyboard' or 'mpu6050'.")
+
+elif control_mode == "keyboard":
+    def on_key_press(event):
+        pressed_keys.add(event.keysym)
+
+    def on_key_release(event):
+        pressed_keys.discard(event.keysym)
+
+    def get_acceleration():
+        if "Left" in pressed_keys:
+            ax= -10
+        elif "Right" in pressed_keys:
+            ax= 10
+        else:
+            ax = 0
+            
+        if "Down" in pressed_keys:
+            ay= 10
+        elif "Up" in pressed_keys:
+            ay=-10
+        else:
+            ay = 0
+        return ax, ay
+    
+elif control_mode == "mpu6050":
+    from mpu6050 import mpu6050
+
+    sensor = mpu6050(0x68)
+
+    def get_acceleration():
+        current_acc = sensor.get_accel_data()
+        return - current_acc['x'], current_acc['y']
+        
+
 # import matplotlib.pyplot as plt	
-# from mpu6050 import mpu6050
+# 
 # import time
 
 HEIGHT = 480
 WIDTH = 800
 DT = 20
 DP = 0.1
-ACC_SCALE = 30
-DAMPING = 0.4
+ACC_SCALE = 60
+DAMPING = 0.8
 # VELTHRESHOLD = 1
 
 # =============== Import and process objects from file ===============
@@ -150,7 +193,6 @@ for obj in objects:
 
 # ====================================================================
 
-# sensor = mpu6050(0x68)
 
 window = tk.Tk()
 window.title("Game map")
@@ -182,31 +224,11 @@ vel = np.array([0, 0], dtype=float)
 
 ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS, fill="blue", outline="blue")
 
-def on_key_press(event):
-    pressed_keys.add(event.keysym)
-
-def on_key_release(event):
-    pressed_keys.discard(event.keysym)
-
 def update_pos():
     window.after(DT, update_pos)
     global pos, vel
 
-    # current_acc = sensor.get_accel_data()
-    # ax, ay = - current_acc['x'], current_acc['y']
-    if "Left" in pressed_keys:
-        ax= -10
-    elif "Right" in pressed_keys:
-        ax= 10
-    else:
-        ax = 0
-        
-    if "Down" in pressed_keys:
-        ay= 10
-    elif "Up" in pressed_keys:
-        ay=-10
-    else:
-        ay = 0
+    ax, ay = get_acceleration()
 
     vel[0] += ACC_SCALE * ax * DT / 1000
     vel[1] += ACC_SCALE * ay * DT / 1000
