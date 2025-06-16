@@ -198,7 +198,8 @@ for obj in objects:
 window = tk.Tk()
 window.title("Game map")
 window.geometry("800x480")
-# window.attributes('-fullscreen', True)
+if control_mode == "mpu6050":
+    window.attributes('-fullscreen', True)
 window.focus_force()
 
 canvas = tk.Canvas(window, width=window.winfo_screenwidth(), height=window.winfo_screenheight(), bg="white")
@@ -314,7 +315,8 @@ if control_mode == "keyboard":
     window.bind("<KeyRelease>", on_key_release)
 
 window.after(DT, update_pos)
-# window.after(100, go_fullscreen)
+if control_mode == "mpu6050":
+    window.after(100, go_fullscreen)
 
 window.mainloop()
 # plt.imshow(2 - circle_wall[:,:,0], cmap='gray', vmin=-3, vmax=2)
