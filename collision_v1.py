@@ -307,9 +307,11 @@ def go_fullscreen():
 def end_fullscreen(event=None):
     window.attributes('-fullscreen', False)    
 
+
 window.bind("<Escape>", end_fullscreen)
-window.bind("<KeyPress>", on_key_press)
-window.bind("<KeyRelease>", on_key_release)
+if control_mode == "keyboard":
+    window.bind("<KeyPress>", on_key_press)
+    window.bind("<KeyRelease>", on_key_release)
 
 window.after(DT, update_pos)
 # window.after(100, go_fullscreen)
