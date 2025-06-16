@@ -1,6 +1,3 @@
-#  TODO:
-#  - define Radien in file
-
 import json
 import tkinter as tk
 import numpy as np
@@ -10,6 +7,8 @@ with open("config.json") as f:
     config = json.load(f)
 
 control_mode = config.get("control", "keyboard")  # Default to keyboard if not specified
+mpl_Debug = config.get("mpl_debug", False)  # Default to False if not specified
+checkpoint_names = config.get("checkpoints", "1G\t9A\t7M\t0E")
 
 if control_mode not in ["keyboard", "mpu6050"]:
     raise ValueError(f"Invalid control mode: {control_mode}. Choose 'keyboard' or 'mpu6050'.")
@@ -46,10 +45,9 @@ elif control_mode == "mpu6050":
         current_acc = sensor.get_accel_data()
         return - current_acc['x'], current_acc['y']
         
+if mpl_Debug:
+    import matplotlib.pyplot as plt	
 
-# import matplotlib.pyplot as plt	
-# 
-# import time
 
 HEIGHT = 480
 WIDTH = 800
@@ -322,19 +320,21 @@ if control_mode == "mpu6050":
     window.after(100, go_fullscreen)
 
 window.mainloop()
-# plt.imshow(2 - circle_wall[:,:,0], cmap='gray', vmin=-3, vmax=2)
-# plt.show()
 
-# # Downsample for clarity (optional, otherwise plot will be very dense)
-# plot_data = val_data
-# step = 1  # plot every 10th pixel
-# Y, X = np.mgrid[0:plot_data.shape[0]:step, 0:plot_data.shape[1]:step]
-# U = plot_data[::step, ::step, 2]  # x-component
-# V = plot_data[::step, ::step, 1]  # y-component
+if mpl_Debug:
+    plt.imshow(2 - circle_wall[:,:,0], cmap='gray', vmin=-3, vmax=2)
+    plt.show()
 
-# plt.figure(figsize=(10, 6))
-# plt.quiver(X, Y, U, V, angles='xy', scale_units='xy', scale=1, color='red')
-# plt.gca().invert_yaxis()  # To match image coordinates
-# plt.title("Gradient Field (from data[:,:,1] and data[:,:,2])")
-# plt.axis('equal')
-# plt.show()
+    # Downsample for clarity (optional, otherwise plot will be very dense)
+    plot_data = val_data
+    step = 1  # plot every 10th pixel
+    Y, X = np.mgrid[0:plot_data.shape[0]:step, 0:plot_data.shape[1]:step]
+    U = plot_data[::step, ::step, 2]  # x-component
+    V = plot_data[::step, ::step, 1]  # y-component
+
+    plt.figure(figsize=(10, 6))
+    plt.quiver(X, Y, U, V, angles='xy', scale_units='xy', scale=1, color='red')
+    plt.gca().invert_yaxis()  # To match image coordinates
+    plt.title("Gradient Field (from data[:,:,1] and data[:,:,2])")
+    plt.axis('equal')
+    plt.show()
