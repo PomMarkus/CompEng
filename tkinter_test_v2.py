@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 
 FILENAME = "map_v1.dat"
 RADIUS = 10
+HOLERADIUS = 11
 HEIGHT = 480
 WIDTH = 800
 
@@ -98,8 +99,8 @@ for obj in objects:
 # print(data[60:75, 95:110, 2])
 
 
-# plt.imshow(2 - data[:,:,0], cmap='gray', vmin=0, vmax=2)
-# plt.show()
+plt.imshow(2 - data[:,:,0], cmap='gray', vmin=0, vmax=2)
+plt.show()
 
 # plt.imshow(np.arctan2(data[:,:,1], data[:,:,2]), cmap='hsv', vmin=-np.pi, vmax=np.pi)
 # plt.show()
@@ -130,21 +131,19 @@ canvas = tk.Canvas(window, width=window.winfo_screenwidth(), height=window.winfo
 canvas.pack(fill=tk.BOTH, expand=True)
 
 for obj in objects:
+    
     if obj[0] == 'w':
-        # Draw a rectangle (x1, y1, x2, y2)
+        # Draw a rectangle
         canvas.create_rectangle(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="black", outline="black")
     elif obj[0] == 'h':
-        # Draw an oval (x1, y1, x2, y2)
-        canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="red", outline="red")
+        # Draw an oval
+        canvas.create_oval(int(obj[1]) - HOLERADIUS, int(obj[2]) - HOLERADIUS, int(obj[1]) + HOLERADIUS, int(obj[2]) + HOLERADIUS, fill="red", outline="red")
     elif obj[0] == 'c':
-        # Draw an oval (x1, y1, x2, y2)
-        canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="green", outline="green")
+        # Draw an oval
+        canvas.create_oval(int(obj[1]) - HOLERADIUS, int(obj[2]) - HOLERADIUS, int(obj[1]) + HOLERADIUS, int(obj[2]) + HOLERADIUS, fill="green", outline="green")
     # elif obj[0] == 's':
-        # Draw an oval (x1, y1, x2, y2)
+        # Draw an oval
         # canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="blue", outline="blue")
-# with open("objects.dat", "w") as f:
-#     for obj in objects:
-#         f.write(f"{obj[0]}\t{obj[1]}\t{obj[2]}\t{obj[3]}\t{obj[4]}\n")
 
 def end_fullscreen(event=None):
     window.attributes('-fullscreen', False)
