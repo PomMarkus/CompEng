@@ -79,9 +79,12 @@ with open(FILENAME, "r") as f:
             pass
         elif line.startswith("s"):
             start_point = np.array([int(line.split("\t")[1]), int(line.split("\t")[2])], dtype=float)
+        elif line.startswith("r"):
+            hole_radius = int(line.split("\t")[1])
         else: 
             objects.append(line.split("\t"))
 
+HOLERADIUS = hole_radius if 'hole_radius' in locals() else HOLERADIUS
 
 # 2D np array
 val_data = np.zeros((HEIGHT, WIDTH, 3))
