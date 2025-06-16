@@ -215,7 +215,7 @@ for obj in objects:
         canvas.create_oval(int(obj[1]) - HOLERADIUS, int(obj[2]) - HOLERADIUS, int(obj[1]) + HOLERADIUS, int(obj[2]) + HOLERADIUS, fill="black", outline="lightgray")
     elif obj[0] == 'c':
         # Draw an oval
-        canvas.create_oval(int(obj[1]) - HOLERADIUS, int(obj[2]) - HOLERADIUS, int(obj[1]) + HOLERADIUS, int(obj[2]) + HOLERADIUS, fill="green", outline="green")
+        canvas.create_oval(int(obj[1]) - HOLERADIUS, int(obj[2]) - HOLERADIUS, int(obj[1]) + HOLERADIUS, int(obj[2]) + HOLERADIUS, fill="green", outline="lightgray")
     # elif obj[0] == 's':
         # Draw an oval
         # canvas.create_oval(int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4]), fill="blue", outline="blue")
