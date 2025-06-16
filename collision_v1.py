@@ -5,6 +5,7 @@ import json
 import tkinter as tk
 import numpy as np
 
+
 with open("config.json") as f:
     config = json.load(f)
 
@@ -37,7 +38,7 @@ elif control_mode == "keyboard":
         return ax, ay
     
 elif control_mode == "mpu6050":
-    from mpu6050 import mpu6050
+    from mpu6050 import mpu6050 # type: ignore
 
     sensor = mpu6050(0x68)
 
