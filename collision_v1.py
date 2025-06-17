@@ -342,6 +342,7 @@ def reset_game():
         canvas.itemconfig(checkpoints[i][0], fill="orange")  # Reset color
         canvas.itemconfig(checkpoints[i][2], text="")  # Reset text
     canvas.coords(ball, int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS)
+    canvas.itemconfig(ball, fill="blue", outline="blue")  # Reset ball color
 
 close_button = tk.Button(window, text="✕", command=close_app, font=("Arial", 14, "bold"), bg="red", fg="white", bd=0, relief="flat", cursor="hand2")
 close_button.place(x=780, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
