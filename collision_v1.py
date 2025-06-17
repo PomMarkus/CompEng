@@ -215,6 +215,7 @@ window.focus_force()
 checkpoint_counter = 0
 canvas = tk.Canvas(window, width=window.winfo_screenwidth(), height=window.winfo_screenheight(), bg="white")
 canvas.pack(fill=tk.BOTH, expand=True)
+canvas.config(cursor="none")
 
 for obj in objects:
     
