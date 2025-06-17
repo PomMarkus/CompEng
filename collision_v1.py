@@ -71,7 +71,7 @@ WIDTH = 800
 
 objects = []
 start_point = np.array([0, 0], dtype=float)
-checkpoints = np.array(list(zip(np.empty(4), np.zeros(4, dtype=int), checkpoint_names.split("\t"))), dtype=object)
+checkpoints = np.array(list(zip(np.empty(4), np.zeros(4, dtype=int), np.empty(4), checkpoint_names.split("\t"))), dtype=object)
 
 
 
@@ -227,6 +227,7 @@ for obj in objects:
     elif obj[0] == 'c':
         # Draw an oval
         checkpoints[checkpoint_counter][0] = canvas.create_oval(int(obj[1]) - HOLERADIUS, int(obj[2]) - HOLERADIUS, int(obj[1]) + HOLERADIUS, int(obj[2]) + HOLERADIUS, fill="orange", outline="lightgray")
+        checkpoints[checkpoint_counter][2] = canvas.create_text(int(obj[1]), int(obj[2]), text="", fill="black", font=("Arial", 10, "bold"))
         checkpoint_counter += 1
 
 
@@ -234,11 +235,14 @@ pos = start_point.copy()
 vel = np.array([0, 0], dtype=float)
 
 ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS, fill="blue", outline="blue")
+checkpoint_counter = 0
 
 def update_pos():
     window.after(DT, update_pos)
-    global pos, vel
+    global pos, vel, checkpoint_counter, checkpoints, ball, val_data
 
+    if checkpoint_counter >= len(checkpoints):
+        canvas.itemconfig(ball, fill="gold", outline="gold")
     ax, ay = get_acceleration()
 
     vel[0] += ACC_SCALE * ax * DT / 1000
@@ -292,7 +296,9 @@ def update_pos():
             c_number = int(val_data[int(temp_pos[1]), int(temp_pos[0]), 3])
             if checkpoints[c_number][1] == 0:  # If checkpoint is not yet reached
                 checkpoints[c_number][1] = 1  # Mark checkpoint as reached
-                canvas.itemconfig(checkpoints[c_number][0], fill="green")  # Change color
+                canvas.itemconfig(checkpoints[c_number][0], fill="#0CFF0B")  # Change color
+                canvas.itemconfig(checkpoints[c_number][2], text=checkpoints[c_number][3])  # Update text
+                checkpoint_counter += 1
         
         
         pos += dstep
@@ -322,6 +328,25 @@ def go_fullscreen():
 def end_fullscreen(event=None):
     window.attributes('-fullscreen', False)    
 
+def close_app():
+    window.destroy()
+
+def reset_game():
+    global pos, vel, checkpoint_counter, checkpoints, ball
+    pos = start_point.copy()
+    vel = np.array([0, 0], dtype=float)
+    checkpoint_counter = 0
+    for i in range(len(checkpoints)):
+        checkpoints[i][1] = 0  # Reset checkpoint status
+        canvas.itemconfig(checkpoints[i][0], fill="orange")  # Reset color
+        canvas.itemconfig(checkpoints[i][2], text="")  # Reset text
+    canvas.coords(ball, int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS)
+
+close_button = tk.Button(window, text="✕", command=close_app, font=("Arial", 14, "bold"), bg="red", fg="white", bd=0, relief="flat", cursor="hand2")
+close_button.place(x=780, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
+
+reset_button = tk.Button(window, text="\u27F3", command=reset_game, font=("Arial", 14, "bold"), bg="blue", fg="white", bd=0, relief="flat", cursor="hand2")
+reset_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
 window.bind("<Escape>", end_fullscreen)
 if control_mode == "keyboard":
