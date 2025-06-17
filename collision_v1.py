@@ -24,16 +24,16 @@ elif control_mode == "keyboard":
 
     def get_acceleration():
         if "Left" in pressed_keys:
-            ax= -10
+            ax= -5
         elif "Right" in pressed_keys:
-            ax= 10
+            ax= 5
         else:
             ax = 0
             
         if "Down" in pressed_keys:
-            ay= 10
+            ay= 5
         elif "Up" in pressed_keys:
-            ay=-10
+            ay=-5
         else:
             ay = 0
         return ax, ay
@@ -55,7 +55,7 @@ HEIGHT = 480
 WIDTH = 800
 DT = 20
 DP = 0.1
-ACC_SCALE = 60
+ACC_SCALE = 100
 DAMPING = 0.8
 # VELTHRESHOLD = 1
 
