@@ -45,7 +45,7 @@ elif control_mode == "mpu6050":
 
     def get_acceleration():
         current_acc = sensor.get_accel_data()
-        return - current_acc['y'], current_acc['x']
+        return current_acc['y'], - current_acc['x']
         
 if mpl_Debug:
     import matplotlib.pyplot as plt	
