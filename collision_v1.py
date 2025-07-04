@@ -1,5 +1,8 @@
 import json
 import tkinter as tk
+import threading
+import time
+import sys
 import numpy as np
 
 
@@ -67,6 +70,28 @@ HOLERADIUS = 12
 HEIGHT = 480
 WIDTH = 800
 
+FANGPIO = 15
+is_running = True
+cpu_temp_list = np.full(60, np.nan)
+cooling_hyst_time = 10
+cooling_average_time = 5
+temp_threshold = [0,58,61,64,67,70,73,76,78,100]
+fan_speed_levels = [0,30,40,50,60,70,80,90,100]
+last_fan_speeds = np.full(cooling_hyst_time, np.nan)
+current_fan_speed = 0
+
+
+if sys.platform == "linux":
+    import RPi.GPIO as GPIO
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(FANGPIO, GPIO.OUT)
+
+    def high(pin):
+        GPIO.output(pin,GPIO.HIGH)
+    def low(pin):
+        GPIO.output(pin,GPIO.LOW)
+
+
 # =============== Import and process objects from file ===============
 
 objects = []
@@ -83,11 +108,10 @@ with open(FILENAME, "r") as f:
         elif line.startswith("s"):
             start_point = np.array([int(line.split("\t")[1]), int(line.split("\t")[2])], dtype=float)
         elif line.startswith("r"):
-            hole_radius = int(line.split("\t")[1])
+            HOLERADIUS = int(line.split("\t")[1])
         else: 
             objects.append(line.split("\t"))
 
-HOLERADIUS = hole_radius if 'hole_radius' in locals() else HOLERADIUS
 
 # 2D np array
 val_data = np.zeros((HEIGHT, WIDTH, 4))
@@ -204,6 +228,53 @@ for obj in objects:
 
 # ====================================================================
 
+def pwm_worker():
+    if sys.platform == "linux":
+        while is_running:
+            if current_fan_speed==0:
+                low(FANGPIO)
+                time.sleep(0.1)
+            elif current_fan_speed==100:
+                high(FANGPIO)
+                time.sleep(0.1)
+            else:
+                delay1=current_fan_speed*1E-5
+                delay2=(100-current_fan_speed)*1E-5
+                high(FANGPIO)
+                time.sleep(delay1)
+                low(FANGPIO)
+                time.sleep(delay2)
+        low(FANGPIO)
+        GPIO.cleanup()
+    
+def general_worker():
+    global cpu_temp_list, cooling_average_time, temp_threshold, fan_speed_levels, last_fan_speeds, current_fan_speed
+    if sys.platform == "linux":
+        while is_running:
+            value_sum = 0
+            number = 0
+            for value in cpu_temp_list[-cooling_average_time:]:
+                if not np.isnan(value):
+                    value_sum += value
+                    number += 1
+            if number == 0:
+                mtemp = 20
+            else:
+                mtemp = value_sum//number
+
+            for i in range(9):
+                if  temp_threshold[i+1] >= mtemp > temp_threshold[i]:
+                    new_speed=fan_speed_levels[i]
+
+            last_fan_speeds = last_fan_speeds[1:]
+            last_fan_speeds = np.append(last_fan_speeds, new_speed)
+            current_fan_speed = np.nanmax(last_fan_speeds)
+            time.sleep(1)
+
+t1 = threading.Thread(target=pwm_worker, daemon=True)
+t2 = threading.Thread(target=general_worker, daemon=True)
+t1.start()
+t2.start()
 
 window = tk.Tk()
 window.title("Game map")
@@ -330,7 +401,12 @@ def end_fullscreen(event=None):
     window.attributes('-fullscreen', False)    
 
 def close_app():
+    global is_running
+    is_running = False
+    t1.join(timeout = 2)
+    t2.join(timeout = 2)
     window.destroy()
+
 
 def reset_game():
     global pos, vel, checkpoint_counter, checkpoints, ball
