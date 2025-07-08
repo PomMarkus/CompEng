@@ -416,8 +416,8 @@ def update_pos():
                 vec_proj_pos = pos_dot_product / np.dot(vec_norm, vec_norm) * vec_norm
                 vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
                 print(np.linalg.norm(vec_proj_vel))
-                if np.linalg.norm(vec_proj_vel) < 10:
-                    vec_proj_vel = np.array([0, 0], dtype=float)
+                # if np.linalg.norm(vec_proj_vel) < 10:
+                #     vec_proj_vel = np.array([0, 0], dtype=float)
                 if not is_colliding:
                     vibrate_cool_down = 100
                     if sys.platform == "linux":
