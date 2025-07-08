@@ -114,6 +114,7 @@ is_paused = False
 fell_into_holes = 0
 hole_cool_down = 0
 vibrate_cool_down = 0
+is_colliding = False
 cpu_temp_list = np.full(60, np.nan)
 cooling_hyst_time = 10
 cooling_average_time = 5
@@ -359,7 +360,7 @@ ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, in
 checkpoint_counter = 0
 
 def update_pos():
-    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused
+    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, is_colliding, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused
 
     if not is_running or is_paused:
         return
@@ -406,15 +407,16 @@ def update_pos():
         temp_pos = pos + dstep
             
         if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
+
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3][::-1]
             pos_dot_product = np.dot(vec_norm, Dpos)
             if (pos_dot_product < 0):
                 vec_proj_pos = pos_dot_product / np.dot(vec_norm, vec_norm) * vec_norm
                 vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
                 print(np.linalg.norm(vec_proj_vel))
-                if np.linalg.norm(vec_proj_vel) < 30:
+                if np.linalg.norm(vec_proj_vel) < 10:
                     vec_proj_vel = np.array([0, 0], dtype=float)
-                else:
+                if not is_colliding:
                     vibrate_cool_down = 100
                     if sys.platform == "linux":
                         high(VIBROGPIO)
@@ -429,21 +431,25 @@ def update_pos():
                 steps = int(dist / DP) if dist > DP else 1
                 dstep = Dpos / steps
                 counter = 0
+                is_colliding = True
                 continue
-                # cancel minimal speed
+
 
             else:
                 shift = vec_norm / np.linalg.norm(vec_norm) * DP
                 pos += shift
                 Dpos -= shift
                 counter += 1
+                is_colliding = True
                 continue
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -2):
+            is_colliding = True
             vel = np.array([0, 0], dtype=float)
             fell_into_holes += 1
             hole_cool_down = 500  # Cooldown for falling into a hole
             break
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -3):
+            is_colliding = True
             c_number = int(val_data[int(temp_pos[1]), int(temp_pos[0]), 3])
             if checkpoints[c_number][1] == 0:  # If checkpoint is not yet reached
                 checkpoints[c_number][1] = 1  # Mark checkpoint as reached
