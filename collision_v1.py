@@ -405,8 +405,10 @@ def update_pos():
             print("Security limit reached, breaking loop")
             quit()
         temp_pos = pos + dstep
-            
-        if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
+        
+        if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == 0):
+            is_colliding = False
+        elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
 
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3][::-1]
             pos_dot_product = np.dot(vec_norm, Dpos)
@@ -443,13 +445,11 @@ def update_pos():
                 is_colliding = True
                 continue
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -2):
-            is_colliding = True
             vel = np.array([0, 0], dtype=float)
             fell_into_holes += 1
             hole_cool_down = 500  # Cooldown for falling into a hole
             break
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -3):
-            is_colliding = True
             c_number = int(val_data[int(temp_pos[1]), int(temp_pos[0]), 3])
             if checkpoints[c_number][1] == 0:  # If checkpoint is not yet reached
                 checkpoints[c_number][1] = 1  # Mark checkpoint as reached
