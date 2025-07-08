@@ -407,15 +407,19 @@ def update_pos():
         temp_pos = pos + dstep
             
         if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
-            vibrate_cool_down = 150 + DT
-            if sys.platform == "linux":
-                high(VIBROGPIO)
-
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3][::-1]
             pos_dot_product = np.dot(vec_norm, Dpos)
             if (pos_dot_product < 0):
                 vec_proj_pos = pos_dot_product / np.dot(vec_norm, vec_norm) * vec_norm
                 vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
+                print(np.linalg.norm(vec_proj_vel))
+                if np.linalg.norm(vec_proj_vel) < 30:
+                    vec_proj_vel = np.array([0, 0], dtype=float)
+                else:
+                    vibrate_cool_down = 100
+                    if sys.platform == "linux":
+                        high(VIBROGPIO)
+
                 Dpos = - 2 * vec_proj_pos + Dpos
                 vel = - 2 * vec_proj_vel + vel
 
@@ -483,6 +487,10 @@ def close_app():
     is_running = False
     t1.join(timeout = 2)
     t2.join(timeout = 2)
+    if sys.platform == "linux":
+        low(FANGPIO)
+        low(VIBROGPIO)
+        GPIO.cleanup()
     window.destroy()
 
 
