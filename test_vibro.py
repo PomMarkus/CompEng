@@ -8,7 +8,7 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setup(PIN, GPIO.OUT)
 
 try:
-    for pulse_time in [0.05, 0.1, 0.2]:
+    for pulse_time in [0.1, 0.15, 0.2, 0.25, 0.3]:
         print(f"\nPulse time: {pulse_time} s")
         for i in range(3):
             GPIO.output(PIN, GPIO.HIGH)
