@@ -78,7 +78,7 @@ def tempcheck():
 
         mtemp=sum(temps)//len(temps)
         if output:
-            print("Mean temp. is: " + str(mtemp) + "Â°C")
+            print("Mean temp. is: " + str(mtemp) + "°C")
 
         for i in range(9):
             if  t[i+1] >= mtemp > t[i]:
