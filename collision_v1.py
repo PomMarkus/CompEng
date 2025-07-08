@@ -296,6 +296,11 @@ def general_worker():
     text_delay_counter = 0
     if sys.platform == "linux":
         while is_running:
+            read = open("/sys/class/thermal/thermal_zone0/temp", "r")
+            cpu_temp = int(read.readline(2))
+            read.close()
+            cpu_temp_list = cpu_temp_list[1:]
+            cpu_temp_list = np.append(cpu_temp_list, cpu_temp)
             value_sum = 0
             number = 0
             for value in cpu_temp_list[-cooling_average_time:]:
@@ -389,7 +394,7 @@ def update_pos():
 
     vel[0] += ACC_SCALE * ax * DT / 1000
     vel[1] += ACC_SCALE * ay * DT / 1000
-    velocity_vibro_threshold = np.sqrt((ACC_SCALE * ax * DT / 1000) ** 2 + (ACC_SCALE * ay * DT / 1000) ** 2) * 1.1
+    velocity_vibro_threshold = np.sqrt((ACC_SCALE * ax * DT / 1000) ** 2 + (ACC_SCALE * ay * DT / 1000) ** 2) * 1.2
     Dpos = np.array(vel) * DT / 1000
     dist = np.linalg.norm(Dpos)
     steps = int(dist / DP) if dist > DP else 1
