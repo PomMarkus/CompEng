@@ -114,7 +114,6 @@ is_paused = False
 fell_into_holes = 0
 hole_cool_down = 0
 vibrate_cool_down = 0
-is_colliding = False
 cpu_temp_list = np.full(60, np.nan)
 cooling_hyst_time = 10
 cooling_average_time = 5
@@ -360,7 +359,7 @@ ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, in
 checkpoint_counter = 0
 
 def update_pos():
-    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, is_colliding, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused
+    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused
 
     if not is_running or is_paused:
         return
@@ -390,6 +389,7 @@ def update_pos():
 
     vel[0] += ACC_SCALE * ax * DT / 1000
     vel[1] += ACC_SCALE * ay * DT / 1000
+    velocity_vibro_threshold = np.sqrt((ACC_SCALE * ax * DT / 1000) ** 2 + (ACC_SCALE * ay * DT / 1000) ** 2) * 1.1
     Dpos = np.array(vel) * DT / 1000
     dist = np.linalg.norm(Dpos)
     steps = int(dist / DP) if dist > DP else 1
@@ -405,10 +405,9 @@ def update_pos():
             print("Security limit reached, breaking loop")
             quit()
         temp_pos = pos + dstep
-        
-        if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == 0):
-            is_colliding = False
-        elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
+
+
+        if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
 
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3][::-1]
             pos_dot_product = np.dot(vec_norm, Dpos)
@@ -418,7 +417,7 @@ def update_pos():
                 print(np.linalg.norm(vec_proj_vel))
                 # if np.linalg.norm(vec_proj_vel) < 10:
                 #     vec_proj_vel = np.array([0, 0], dtype=float)
-                if not is_colliding:
+                if np.linalg.norm(vec_proj_vel) < velocity_vibro_threshold:
                     vibrate_cool_down = 100
                     if sys.platform == "linux":
                         high(VIBROGPIO)
@@ -433,7 +432,6 @@ def update_pos():
                 steps = int(dist / DP) if dist > DP else 1
                 dstep = Dpos / steps
                 counter = 0
-                is_colliding = True
                 continue
 
 
@@ -442,7 +440,6 @@ def update_pos():
                 pos += shift
                 Dpos -= shift
                 counter += 1
-                is_colliding = True
                 continue
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -2):
             vel = np.array([0, 0], dtype=float)
