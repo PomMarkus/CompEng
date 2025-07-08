@@ -4,9 +4,8 @@ import threading
 import time
 import sys
 import numpy as np
-import pyautogui
 
-pyautogui.moveTo(300, 300)
+import paho.mqtt.client as mqtt
 
 with open("config.json") as f:
     config = json.load(f)
@@ -69,11 +68,52 @@ DAMPING = 0.8
 FILENAME = "map_v1.dat"
 RADIUS = 10
 HOLERADIUS = 12
-HEIGHT = 480
-WIDTH = 800
 
 FANGPIO = 15
+VIBROGPIO = 14
+
+BROKER = "tanzwg.jkub.com"
+PORT = 1883
+TOPIC = "pr_embedded/puzzle_tilt_maze"
+USERNAME = "SETTLE DOWN"
+PASSWORD = "NEULAND"
+
+def on_connect(client, userdata, flags, rc):
+    print(f"Connected to MQTT broker with result code {rc}")
+    client.publish(TOPIC+"/general", "Connected")
+    client.subscribe(TOPIC+"/general")
+
+
+def on_message(client, userdata, msg):
+    print(f"Received message on topic {msg.topic}: {msg.payload.decode()}")
+    if msg.topic == TOPIC + "/general":
+        if msg.payload.decode() == "initialize":
+            client.publish(TOPIC + "/general", "initialize_ack")
+
+        elif msg.payload.decode() == "start":
+            global is_active
+            is_active = True
+            client.publish(TOPIC + "/general", "start_ack")
+            start_game()
+
+client = mqtt.Client()
+
+client.username_pw_set(USERNAME, PASSWORD)
+
+client.on_connect = on_connect
+client.on_message = on_message
+
+
+print("trying to connect to MQTT broker...")
+client.connect(BROKER, PORT, 30)
+
+
+client.loop_start()
+
+
 is_running = True
+is_active = False
+is_paused = False
 cpu_temp_list = np.full(60, np.nan)
 cooling_hyst_time = 10
 cooling_average_time = 5
@@ -312,8 +352,12 @@ ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, in
 checkpoint_counter = 0
 
 def update_pos():
-    window.after(DT, update_pos)
-    global pos, vel, checkpoint_counter, checkpoints, ball, val_data
+    global pos, vel, checkpoint_counter, checkpoints, ball, val_data, is_paused
+
+    if not is_running or not is_active or is_paused:
+        return
+    else:
+        window.after(DT, update_pos)
 
     if checkpoint_counter >= len(checkpoints):
         canvas.itemconfig(ball, fill="gold", outline="gold")
@@ -422,18 +466,61 @@ def reset_game():
     canvas.coords(ball, int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS)
     canvas.itemconfig(ball, fill="blue", outline="blue")  # Reset ball color
 
+def pause_game():
+    global is_paused
+    if is_paused:
+        is_paused = False
+        window.after(DT, update_pos)
+        pause_button.config(bg="green", text="\u23F8")  # Change button to pause icon
+    else:
+        is_paused = True
+        window.after_cancel(update_pos)  # Stop the update loop
+        pause_button.config(bg="orange", text="\u25B6")  # Change button to play icon
+        
+
+def start_game():
+    global is_active, overlay_button, overlay_label
+    if not is_active:
+        return
+    overlay_label.config(text="Game is unlocked! Press Start to begin.")
+    overlay_button.config(state="normal", bg="green")
+    
+
 close_button = tk.Button(window, text="✕", command=close_app, font=("Arial", 14, "bold"), bg="red", fg="white", bd=0, relief="flat", cursor="hand2")
 close_button.place(x=780, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
-reset_button = tk.Button(window, text="\u27F3", command=reset_game, font=("Arial", 14, "bold"), bg="blue", fg="white", bd=0, relief="flat", cursor="hand2")
-reset_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
+pause_button = tk.Button(window, text="\u23F8", command=pause_game, font=("Arial", 14), bg="green", fg="white", bd=0, relief="flat", cursor="hand2")
+pause_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
+
+# reset_button = tk.Button(window, text="\u27F3", command=reset_game, font=("Arial", 14, "bold"), bg="blue", fg="white", bd=0, relief="flat", cursor="hand2")
+# reset_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
+
+overlay = canvas.create_rectangle(200, 140, 600, 340, fill="#cccccc", outline="black")
+overlay_frame = tk.Frame(window, bg="#cccccc")
+overlay_frame.place(x=200, y=140, width=400, height=200)
+overlay_label = tk.Label(overlay_frame, text="Tilt Maze is not yet unlocked!", bg="#cccccc", font=("Arial", 14, "bold"))
+overlay_label.pack(pady=30)
+overlay_button = tk.Button(overlay_frame, text="Start Game", state="disabled", command=lambda: [overlay_frame.destroy(), canvas.delete(overlay), window.after(DT, update_pos)], bg="#cccccc", font=("Arial", 12))
+overlay_button.pack(pady=20)
+
+# popup = tk.Toplevel(window)
+# popup.title("Tilt Maze")
+# popup.geometry("300x200+250+140")
+# popup.transient(window)  # Make popup a child of the main window
+# popup.grab_set()  # Make popup modal
+
+# popup_label = tk.Label(popup, text="Tilt Maze not yet unlocked!")
+# popup_label.pack(pady=10)
+
+# popup_button = tk.Button(popup, text="Start Game", state="disabled", command=lambda: [popup.destroy(), window.after(DT, update_pos)])
+# popup_button.pack(pady=10)
 
 window.bind("<Escape>", end_fullscreen)
 if control_mode == "keyboard":
     window.bind("<KeyPress>", on_key_press)
     window.bind("<KeyRelease>", on_key_release)
 
-window.after(DT, update_pos)
+
 if control_mode == "mpu6050":
     window.after(100, go_fullscreen)
 
