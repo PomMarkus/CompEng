@@ -139,6 +139,7 @@ if sys.platform == "linux":
 
 objects = []
 start_point = np.array([0, 0], dtype=float)
+
 checkpoints = np.array(list(zip(np.empty(4), np.zeros(4, dtype=int), np.empty(4), checkpoint_names.split("\t"))), dtype=object)
 
 
@@ -154,6 +155,8 @@ with open(FILENAME, "r") as f:
             HOLERADIUS = int(line.split("\t")[1])
         else: 
             objects.append(line.split("\t"))
+
+start_point_default = start_point.copy()
 
 
 # 2D np array
@@ -364,7 +367,7 @@ ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, in
 checkpoint_counter = 0
 
 def update_pos():
-    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused
+    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused, hole_status_text, client
 
     if not is_running or is_paused:
         return
@@ -390,6 +393,11 @@ def update_pos():
 
     if checkpoint_counter >= len(checkpoints):
         canvas.itemconfig(ball, fill="gold", outline="gold")
+        pause_game()
+        start_point = start_point_default.copy()
+        pos = start_point.copy()
+        vel = np.array([0, 0], dtype=float)
+        client.publish(TOPIC + "/points", (5 * fell_into_holes) if fell_into_holes < 10 else 45)
     ax, ay = get_acceleration()
 
     vel[0] += ACC_SCALE * ax * DT / 1000
@@ -450,6 +458,7 @@ def update_pos():
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -2):
             vel = np.array([0, 0], dtype=float)
             fell_into_holes += 1
+            canvas.itemconfig(hole_status_text, text=f"Fell into holes: {fell_into_holes}")
             hole_cool_down = 500  # Cooldown for falling into a hole
             break
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -3):
@@ -538,6 +547,9 @@ pause_button.config(state="disabled")  # Initially disabled until game starts
 
 # reset_button = tk.Button(window, text="\u27F3", command=reset_game, font=("Arial", 14, "bold"), bg="blue", fg="white", bd=0, relief="flat", cursor="hand2")
 # reset_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
+
+hole_status_text = canvas.create_text(400, 3, text=f"Fell into holes: {fell_into_holes}", font=("Arial", 10, "bold"), fill="white", anchor="n")
+
 
 semi_transparent_overlay = canvas.create_rectangle(0, 0, WIDTH, HEIGHT, fill="#424242", outline="", stipple="gray50")
 
