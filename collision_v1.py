@@ -4,7 +4,9 @@ import threading
 import time
 import sys
 import numpy as np
+import pyautogui
 
+pyautogui.moveTo(100, 100)
 
 with open("config.json") as f:
     config = json.load(f)
