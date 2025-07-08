@@ -91,8 +91,6 @@ def on_message(client, userdata, msg):
             client.publish(TOPIC + "/general", "initialize_ack")
 
         elif msg.payload.decode() == "start":
-            global is_active
-            is_active = True
             client.publish(TOPIC + "/general", "start_ack")
             start_game()
 
@@ -112,8 +110,10 @@ client.loop_start()
 
 
 is_running = True
-is_active = False
 is_paused = False
+fell_into_holes = 0
+hole_cool_down = 0
+vibrate_cool_down = 0
 cpu_temp_list = np.full(60, np.nan)
 cooling_hyst_time = 10
 cooling_average_time = 5
@@ -127,6 +127,7 @@ if sys.platform == "linux":
     import RPi.GPIO as GPIO
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(FANGPIO, GPIO.OUT)
+    GPIO.setup(VIBROGPIO, GPIO.OUT)
 
     def high(pin):
         GPIO.output(pin,GPIO.HIGH)
@@ -291,6 +292,7 @@ def pwm_worker():
     
 def general_worker():
     global cpu_temp_list, cooling_average_time, temp_threshold, fan_speed_levels, last_fan_speeds, current_fan_speed
+    text_delay_counter = 0
     if sys.platform == "linux":
         while is_running:
             value_sum = 0
@@ -312,6 +314,10 @@ def general_worker():
             last_fan_speeds = np.append(last_fan_speeds, new_speed)
             current_fan_speed = np.nanmax(last_fan_speeds)
             time.sleep(1)
+            text_delay_counter += 1
+            if text_delay_counter >= 10:
+                text_delay_counter = 0
+                print(f"CPU Temp: {mtemp}°C, Fan Speed: {current_fan_speed}%")
 
 t1 = threading.Thread(target=pwm_worker, daemon=True)
 t2 = threading.Thread(target=general_worker, daemon=True)
@@ -352,12 +358,31 @@ ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, in
 checkpoint_counter = 0
 
 def update_pos():
-    global pos, vel, checkpoint_counter, checkpoints, ball, val_data, is_paused
+    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused
 
-    if not is_running or not is_active or is_paused:
+    if not is_running or is_paused:
         return
     else:
         window.after(DT, update_pos)
+    
+    if vibrate_cool_down > 0:
+        vibrate_cool_down -= DT
+        if vibrate_cool_down <= 0:
+            vibrate_cool_down = 0
+            if sys.platform == "linux":
+                low(VIBROGPIO)
+            
+        
+        
+
+    if hole_cool_down > 0:
+        hole_cool_down -= DT
+        if hole_cool_down <= 0:
+            hole_cool_down = 0
+            pos = start_point.copy()
+            vel = np.array([0, 0], dtype=float)
+        return
+    
 
     if checkpoint_counter >= len(checkpoints):
         canvas.itemconfig(ball, fill="gold", outline="gold")
@@ -382,6 +407,10 @@ def update_pos():
         temp_pos = pos + dstep
             
         if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
+            vibrate_cool_down = 150 + DT
+            if sys.platform == "linux":
+                high(VIBROGPIO)
+
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3][::-1]
             pos_dot_product = np.dot(vec_norm, Dpos)
             if (pos_dot_product < 0):
@@ -407,8 +436,9 @@ def update_pos():
                 counter += 1
                 continue
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -2):
-            pos = start_point.copy() # maybe delay
             vel = np.array([0, 0], dtype=float)
+            fell_into_holes += 1
+            hole_cool_down = 500  # Cooldown for falling into a hole
             break
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -3):
             c_number = int(val_data[int(temp_pos[1]), int(temp_pos[0]), 3])
@@ -417,6 +447,8 @@ def update_pos():
                 canvas.itemconfig(checkpoints[c_number][0], fill="#0CFF0B")  # Change color
                 canvas.itemconfig(checkpoints[c_number][2], text=checkpoints[c_number][3])  # Update text
                 checkpoint_counter += 1
+                coords = canvas.coords(checkpoints[c_number][0])
+                start_point = np.array([(coords[0] + coords[2]) / 2, (coords[1] + coords[3]) / 2], dtype=float)  # Update start point to the center of the checkpoint
         
         
         pos += dstep
@@ -479,28 +511,34 @@ def pause_game():
         
 
 def start_game():
-    global is_active, overlay_button, overlay_label
-    if not is_active:
-        return
+    global overlay_button, overlay_label
     overlay_label.config(text="Game is unlocked! Press Start to begin.")
     overlay_button.config(state="normal", bg="green")
+    pause_button.config(state="normal")  # Enable pause button
     
 
 close_button = tk.Button(window, text="✕", command=close_app, font=("Arial", 14, "bold"), bg="red", fg="white", bd=0, relief="flat", cursor="hand2")
 close_button.place(x=780, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
-pause_button = tk.Button(window, text="\u23F8", command=pause_game, font=("Arial", 14), bg="green", fg="white", bd=0, relief="flat", cursor="hand2")
+pause_button = tk.Button(window, text="\u23F8", command=pause_game, font=("Arial", 12), bg="green", fg="white", bd=0, relief="flat", cursor="hand2")
 pause_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
+pause_button.config(state="disabled")  # Initially disabled until game starts
 
 # reset_button = tk.Button(window, text="\u27F3", command=reset_game, font=("Arial", 14, "bold"), bg="blue", fg="white", bd=0, relief="flat", cursor="hand2")
 # reset_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
-overlay = canvas.create_rectangle(200, 140, 600, 340, fill="#cccccc", outline="black")
-overlay_frame = tk.Frame(window, bg="#cccccc")
+semi_transparent_overlay = canvas.create_rectangle(0, 0, WIDTH, HEIGHT, fill="#424242", outline="", stipple="gray50")
+
+overlay = canvas.create_rectangle(200, 140, 600, 340, fill="#eeeeee", outline="black")
+overlay_frame = tk.Frame(window, bg="#eeeeee")
 overlay_frame.place(x=200, y=140, width=400, height=200)
-overlay_label = tk.Label(overlay_frame, text="Tilt Maze is not yet unlocked!", bg="#cccccc", font=("Arial", 14, "bold"))
+overlay_label = tk.Label(overlay_frame, text="Tilt Maze is not yet unlocked!", bg="#eeeeee", font=("Arial", 14, "bold"))
 overlay_label.pack(pady=30)
-overlay_button = tk.Button(overlay_frame, text="Start Game", state="disabled", command=lambda: [overlay_frame.destroy(), canvas.delete(overlay), window.after(DT, update_pos)], bg="#cccccc", font=("Arial", 12))
+overlay_button = tk.Button(overlay_frame, 
+                           text="Start Game", 
+                           state="disabled", 
+                           command=lambda: [overlay_frame.destroy(), canvas.delete(overlay), canvas.delete(semi_transparent_overlay), window.after(DT, update_pos)],
+                           bg="#eeeeee", font=("Arial", 12))
 overlay_button.pack(pady=20)
 
 # popup = tk.Toplevel(window)
