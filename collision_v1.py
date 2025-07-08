@@ -288,6 +288,7 @@ def pwm_worker():
                 low(FANGPIO)
                 time.sleep(delay2)
         low(FANGPIO)
+        low(VIBROGPIO)
         GPIO.cleanup()
     
 def general_worker():
@@ -371,9 +372,7 @@ def update_pos():
             vibrate_cool_down = 0
             if sys.platform == "linux":
                 low(VIBROGPIO)
-            
-        
-        
+                  
 
     if hole_cool_down > 0:
         hole_cool_down -= DT
@@ -487,10 +486,6 @@ def close_app():
     is_running = False
     t1.join(timeout = 2)
     t2.join(timeout = 2)
-    if sys.platform == "linux":
-        low(FANGPIO)
-        low(VIBROGPIO)
-        GPIO.cleanup()
     window.destroy()
 
 
