@@ -414,7 +414,7 @@ def update_pos():
             if (pos_dot_product < 0):
                 vec_proj_pos = pos_dot_product / np.dot(vec_norm, vec_norm) * vec_norm
                 vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
-                print(np.linalg.norm(vec_proj_vel))
+                print(np.linalg.norm(vec_proj_vel), velocity_vibro_threshold)
                 # if np.linalg.norm(vec_proj_vel) < 10:
                 #     vec_proj_vel = np.array([0, 0], dtype=float)
                 if np.linalg.norm(vec_proj_vel) > velocity_vibro_threshold:
