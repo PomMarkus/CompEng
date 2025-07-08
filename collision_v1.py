@@ -425,8 +425,8 @@ def update_pos():
                 if np.linalg.norm(vec_proj_vel) > velocity_vibro_threshold:
                     vibrate_cool_down = 100
                     if sys.platform == "linux":
-                        # high(VIBROGPIO)
-                        pass
+                        high(VIBROGPIO)
+                        # pass
 
                 Dpos = - 2 * vec_proj_pos + Dpos
                 vel = - 2 * vec_proj_vel + vel
