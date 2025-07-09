@@ -439,7 +439,7 @@ def end_fullscreen(event=None):
 
 def close_app():
     if sys.platform == "linux":
-        low(FANGPIO)
+        low(VIBROGPIO)
         GPIO.cleanup()
     window.destroy()
 
