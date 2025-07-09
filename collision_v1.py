@@ -483,7 +483,7 @@ def start_game():
 close_button = tk.Button(window, text="✕", command=close_app, font=("Arial", 14, "bold"), bg="red", fg="white", bd=0, relief="flat", cursor="hand2")
 close_button.place(x=780, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
-pause_button = tk.Button(window, text="\u23F8", command=pause_game, font=("Arial", 12), bg="green", fg="white", bd=0, relief="flat", cursor="hand2")
+pause_button = tk.Button(window, text="\u23F8", command=pause_game, font=("DejaVu Sans", 12), bg="green", fg="white", bd=0, relief="flat", cursor="hand2")
 pause_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 pause_button.config(state="disabled")  # Initially disabled until game starts
 
