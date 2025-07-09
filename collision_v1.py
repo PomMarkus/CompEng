@@ -300,7 +300,7 @@ ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, in
 checkpoint_counter = 0
 
 def update_pos():
-    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused, hole_status_text, client
+    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused, is_finished, hole_status_text, client
 
     if is_paused:
         return
@@ -331,11 +331,11 @@ def update_pos():
     if checkpoint_counter >= len(checkpoints) and not is_finished:
         is_finished = True
         canvas.itemconfig(ball, fill="gold", outline="gold")
-        pause_game()
         start_point = start_point_default.copy()
         pos = start_point.copy()
         vel = np.array([0, 0], dtype=float)
         client.publish(TOPIC + "/points", (5 * fell_into_holes) if fell_into_holes < 10 else 45)
+        pause_game()
     ax, ay = get_acceleration()
 
     vel[0] += ACC_SCALE * ax * DT / 1000
