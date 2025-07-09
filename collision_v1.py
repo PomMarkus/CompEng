@@ -1,6 +1,5 @@
 import json
 import tkinter as tk
-import threading
 import time
 import sys
 import numpy as np
@@ -109,24 +108,15 @@ client.connect(BROKER, PORT, 30)
 client.loop_start()
 
 
-is_running = True
 is_paused = False
 fell_into_holes = 0
 hole_cool_down = 0
 vibrate_cool_down = 0
-cpu_temp_list = np.full(60, np.nan)
-cooling_hyst_time = 10
-cooling_average_time = 5
-temp_threshold = [0,58,61,64,67,70,73,76,78,100]
-fan_speed_levels = [0,30,40,50,60,70,80,90,100]
-last_fan_speeds = np.full(cooling_hyst_time, np.nan)
-current_fan_speed = 0
 
 
 if sys.platform == "linux":
     import RPi.GPIO as GPIO
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(FANGPIO, GPIO.OUT)
     GPIO.setup(VIBROGPIO, GPIO.OUT)
 
     def high(pin):
@@ -274,65 +264,6 @@ for obj in objects:
 
 # ====================================================================
 
-def pwm_worker():
-    if sys.platform == "linux":
-        while is_running:
-            if current_fan_speed==0:
-                low(FANGPIO)
-                time.sleep(0.1)
-            elif current_fan_speed==100:
-                high(FANGPIO)
-                time.sleep(0.1)
-            else:
-                delay1=current_fan_speed*1E-5
-                delay2=(100-current_fan_speed)*1E-5
-                high(FANGPIO)
-                time.sleep(delay1)
-                low(FANGPIO)
-                time.sleep(delay2)
-        low(FANGPIO)
-        low(VIBROGPIO)
-        GPIO.cleanup()
-    
-def general_worker():
-    global cpu_temp_list, cooling_average_time, temp_threshold, fan_speed_levels, last_fan_speeds, current_fan_speed
-    text_delay_counter = 0
-    if sys.platform == "linux":
-        while is_running:
-            read = open("/sys/class/thermal/thermal_zone0/temp", "r")
-            cpu_temp = int(read.readline(2))
-            read.close()
-            cpu_temp_list = cpu_temp_list[1:]
-            cpu_temp_list = np.append(cpu_temp_list, cpu_temp)
-            value_sum = 0
-            number = 0
-            for value in cpu_temp_list[-cooling_average_time:]:
-                if not np.isnan(value):
-                    value_sum += value
-                    number += 1
-            if number == 0:
-                mtemp = 20
-            else:
-                mtemp = value_sum//number
-
-            for i in range(9):
-                if  temp_threshold[i+1] >= mtemp > temp_threshold[i]:
-                    new_speed=fan_speed_levels[i]
-
-            last_fan_speeds = last_fan_speeds[1:]
-            last_fan_speeds = np.append(last_fan_speeds, new_speed)
-            current_fan_speed = np.nanmax(last_fan_speeds)
-            time.sleep(1)
-            text_delay_counter += 1
-            if text_delay_counter >= 10:
-                text_delay_counter = 0
-                print(f"CPU Temp: {mtemp}°C, Fan Speed: {current_fan_speed}%")
-
-t1 = threading.Thread(target=pwm_worker, daemon=True)
-t2 = threading.Thread(target=general_worker, daemon=True)
-t1.start()
-t2.start()
-
 window = tk.Tk()
 window.title("Game map")
 window.geometry("800x480")
@@ -361,6 +292,7 @@ for obj in objects:
 
 
 pos = start_point.copy()
+last_pos = pos.copy()
 vel = np.array([0, 0], dtype=float)
 
 ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS, fill="blue", outline="blue")
@@ -369,7 +301,7 @@ checkpoint_counter = 0
 def update_pos():
     global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused, hole_status_text, client
 
-    if not is_running or is_paused:
+    if is_paused:
         return
     else:
         window.after(DT, update_pos)
@@ -380,6 +312,8 @@ def update_pos():
             vibrate_cool_down = 0
             if sys.platform == "linux":
                 low(VIBROGPIO)
+            else:
+                canvas.itemconfig(vibro_ind, fill="gray")
                   
 
     if hole_cool_down > 0:
@@ -387,6 +321,7 @@ def update_pos():
         if hole_cool_down <= 0:
             hole_cool_down = 0
             pos = start_point.copy()
+            last_pos = pos.copy()
             vel = np.array([0, 0], dtype=float)
         return
     
@@ -396,6 +331,7 @@ def update_pos():
         pause_game()
         start_point = start_point_default.copy()
         pos = start_point.copy()
+        last_pos = pos.copy()
         vel = np.array([0, 0], dtype=float)
         client.publish(TOPIC + "/points", (5 * fell_into_holes) if fell_into_holes < 10 else 45)
     ax, ay = get_acceleration()
@@ -427,7 +363,7 @@ def update_pos():
             if (pos_dot_product < 0):
                 vec_proj_pos = pos_dot_product / np.dot(vec_norm, vec_norm) * vec_norm
                 vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
-                print(np.linalg.norm(vec_proj_vel), velocity_vibro_threshold)
+                # print(np.linalg.norm(vec_proj_vel), velocity_vibro_threshold)
                 # if np.linalg.norm(vec_proj_vel) < 10:
                 #     vec_proj_vel = np.array([0, 0], dtype=float)
                 if np.linalg.norm(vec_proj_vel) > velocity_vibro_threshold:
@@ -435,6 +371,8 @@ def update_pos():
                     if sys.platform == "linux":
                         high(VIBROGPIO)
                         # pass
+                    else:
+                        canvas.itemconfig(vibro_ind, fill="red")
 
                 Dpos = - 2 * vec_proj_pos + Dpos
                 vel = - 2 * vec_proj_vel + vel
@@ -500,10 +438,9 @@ def end_fullscreen(event=None):
     window.attributes('-fullscreen', False)    
 
 def close_app():
-    global is_running
-    is_running = False
-    t1.join(timeout = 2)
-    t2.join(timeout = 2)
+    if sys.platform == "linux":
+        low(FANGPIO)
+        GPIO.cleanup()
     window.destroy()
 
 
@@ -533,6 +470,7 @@ def pause_game():
 
 def start_game():
     global overlay_button, overlay_label
+    reset_game()  # Reset game state
     overlay_label.config(text="Game is unlocked! Press Start to begin.")
     overlay_button.config(state="normal", bg="green")
     pause_button.config(state="normal")  # Enable pause button
@@ -549,6 +487,10 @@ pause_button.config(state="disabled")  # Initially disabled until game starts
 # reset_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
 hole_status_text = canvas.create_text(400, 3, text=f"Fell into holes: {fell_into_holes}", font=("Arial", 10, "bold"), fill="white", anchor="n")
+
+vibro_ind = None
+if sys.platform != "linux":
+    vibro_ind = canvas.create_oval(30, 5, 40, 15, fill="gray", outline="black")
 
 
 semi_transparent_overlay = canvas.create_rectangle(0, 0, WIDTH, HEIGHT, fill="#424242", outline="", stipple="gray50")
@@ -585,7 +527,10 @@ if control_mode == "keyboard":
 
 if control_mode == "mpu6050":
     window.after(100, go_fullscreen)
-
+# =====================
+if True:
+    start_game()
+# =====================
 window.mainloop()
 
 if mpl_Debug:
