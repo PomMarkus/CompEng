@@ -109,6 +109,7 @@ client.loop_start()
 
 
 is_paused = False
+is_finished = False
 fell_into_holes = 0
 hole_cool_down = 0
 vibrate_cool_down = 0
@@ -299,7 +300,7 @@ ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, in
 checkpoint_counter = 0
 
 def update_pos():
-    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused, hole_status_text, client
+    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused, hole_status_text, client, last_pos
 
     if is_paused:
         return
@@ -326,7 +327,8 @@ def update_pos():
         return
     
 
-    if checkpoint_counter >= len(checkpoints):
+    if checkpoint_counter >= len(checkpoints) and not is_finished:
+        is_finished = True
         canvas.itemconfig(ball, fill="gold", outline="gold")
         pause_game()
         start_point = start_point_default.copy()
@@ -338,7 +340,6 @@ def update_pos():
 
     vel[0] += ACC_SCALE * ax * DT / 1000
     vel[1] += ACC_SCALE * ay * DT / 1000
-    velocity_vibro_threshold = np.sqrt((ACC_SCALE * ax * DT / 1000) ** 2 + (ACC_SCALE * ay * DT / 1000) ** 2) * 1.2
     Dpos = np.array(vel) * DT / 1000
     dist = np.linalg.norm(Dpos)
     steps = int(dist / DP) if dist > DP else 1
@@ -363,10 +364,11 @@ def update_pos():
             if (pos_dot_product < 0):
                 vec_proj_pos = pos_dot_product / np.dot(vec_norm, vec_norm) * vec_norm
                 vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
-                # print(np.linalg.norm(vec_proj_vel), velocity_vibro_threshold)
-                # if np.linalg.norm(vec_proj_vel) < 10:
-                #     vec_proj_vel = np.array([0, 0], dtype=float)
-                if np.linalg.norm(vec_proj_vel) > velocity_vibro_threshold:
+
+                pos_difference = pos - last_pos
+                vec_proj_difference = np.dot(vec_norm, pos_difference) / np.dot(vec_norm, vec_norm) * vec_norm
+                # print(np.linalg.norm(vec_proj_difference))
+                if np.linalg.norm(vec_proj_difference) > 0.05:
                     vibrate_cool_down = 100
                     if sys.platform == "linux":
                         high(VIBROGPIO)
@@ -409,7 +411,7 @@ def update_pos():
                 coords = canvas.coords(checkpoints[c_number][0])
                 start_point = np.array([(coords[0] + coords[2]) / 2, (coords[1] + coords[3]) / 2], dtype=float)  # Update start point to the center of the checkpoint
         
-        
+        last_pos = pos.copy()
         pos += dstep
         Dpos -= dstep
             
@@ -464,6 +466,8 @@ def pause_game():
         pause_button.config(bg="green", text="\u23F8")  # Change button to pause icon
     else:
         is_paused = True
+        if sys.platform == "linux":
+            low(VIBROGPIO)
         window.after_cancel(update_pos)  # Stop the update loop
         pause_button.config(bg="orange", text="\u25B6")  # Change button to play icon
         
