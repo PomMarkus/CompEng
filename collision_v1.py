@@ -368,7 +368,7 @@ def update_pos():
                 pos_difference = pos - last_pos
                 vec_proj_difference = np.dot(vec_norm, pos_difference) / np.dot(vec_norm, vec_norm) * vec_norm
                 print(np.linalg.norm(vec_proj_difference))
-                if np.linalg.norm(vec_proj_difference) > 0.05:
+                if np.linalg.norm(vec_proj_difference) > 0.1:
                     vibrate_cool_down = 100
                     if sys.platform == "linux":
                         high(VIBROGPIO)
