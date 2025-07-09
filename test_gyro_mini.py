@@ -3,7 +3,7 @@ from mpu6050 import mpu6050
 import time
 
 
-DT = 1000
+DT = 500
 
 
 sensor = mpu6050(0x68)
