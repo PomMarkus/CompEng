@@ -11,7 +11,7 @@ with open("config.json") as f:
 
 control_mode = config.get("control", "keyboard")  # Default to keyboard if not specified
 mpl_Debug = config.get("mpl_debug", False)  # Default to False if not specified
-checkpoint_names = config.get("checkpoints", "1G\t9A\t7M\t0E")
+checkpoint_names = config.get("checkpoints", "1H\t9O\t7L\t0E")
 
 if control_mode not in ["keyboard", "mpu6050"]:
     raise ValueError(f"Invalid control mode: {control_mode}. Choose 'keyboard' or 'mpu6050'.")
@@ -293,14 +293,14 @@ for obj in objects:
 
 
 pos = start_point.copy()
-last_pos = pos.copy()
+
 vel = np.array([0, 0], dtype=float)
 
 ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, int(pos[0]) + RADIUS, int(pos[1]) + RADIUS, fill="blue", outline="blue")
 checkpoint_counter = 0
 
 def update_pos():
-    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused, hole_status_text, client, last_pos
+    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused, hole_status_text, client
 
     if is_paused:
         return
@@ -322,10 +322,11 @@ def update_pos():
         if hole_cool_down <= 0:
             hole_cool_down = 0
             pos = start_point.copy()
-            last_pos = pos.copy()
             vel = np.array([0, 0], dtype=float)
         return
     
+    last_pos = pos.copy()
+    normal_vectors = set()
 
     if checkpoint_counter >= len(checkpoints) and not is_finished:
         is_finished = True
@@ -333,7 +334,6 @@ def update_pos():
         pause_game()
         start_point = start_point_default.copy()
         pos = start_point.copy()
-        last_pos = pos.copy()
         vel = np.array([0, 0], dtype=float)
         client.publish(TOPIC + "/points", (5 * fell_into_holes) if fell_into_holes < 10 else 45)
     ax, ay = get_acceleration()
@@ -358,24 +358,12 @@ def update_pos():
 
 
         if (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] > 0):
-
+            normal_vectors.add((val_data[int(temp_pos[1]), int(temp_pos[0]), 2], val_data[int(temp_pos[1]), int(temp_pos[0]), 1]))
             vec_norm = val_data[int(temp_pos[1]), int(temp_pos[0]), 1:3][::-1]
             pos_dot_product = np.dot(vec_norm, Dpos)
             if (pos_dot_product < 0):
                 vec_proj_pos = pos_dot_product / np.dot(vec_norm, vec_norm) * vec_norm
                 vec_proj_vel = np.dot(vec_norm, vel) / np.dot(vec_norm, vec_norm) * vec_norm
-
-                pos_difference = pos - last_pos
-                vec_proj_difference = np.dot(vec_norm, pos_difference) / np.dot(vec_norm, vec_norm) * vec_norm
-                print(np.linalg.norm(vec_proj_difference))
-                if np.linalg.norm(vec_proj_difference) > 0.1:
-                    vibrate_cool_down = 100
-                    if sys.platform == "linux":
-                        high(VIBROGPIO)
-                        # pass
-                    else:
-                        canvas.itemconfig(vibro_ind, fill="red")
-
                 Dpos = - 2 * vec_proj_pos + Dpos
                 vel = - 2 * vec_proj_vel + vel
 
@@ -411,18 +399,30 @@ def update_pos():
                 coords = canvas.coords(checkpoints[c_number][0])
                 start_point = np.array([(coords[0] + coords[2]) / 2, (coords[1] + coords[3]) / 2], dtype=float)  # Update start point to the center of the checkpoint
         
-        last_pos = pos.copy()
         pos += dstep
         Dpos -= dstep
             
         counter += 1
 
-    if (val_data[int(pos[1]), int(pos[0]), 0] == -1):
+    if (val_data[int(pos[1]), int(pos[0]), 0] == -1): #Hole mechanism
         vec_norm = val_data[int(pos[1]), int(pos[0]), 1:3][::-1]  # Normal vector (y, x) -> (x, y)
         vec_tang = np.array([vec_norm[1], -vec_norm[0]])  # Tangential vector (90 degrees rotation)
         vec_proj_vel_tang = np.dot(vec_tang, vel) / np.dot(vec_tang, vec_tang) * vec_tang
         vel += vec_norm * 10
         vel -= vec_proj_vel_tang * 0.3
+
+    pos_difference = pos - last_pos
+    for vector in normal_vectors:
+        vec_norm = np.array(vector, dtype=float)
+        vec_proj_difference = np.dot(vec_norm, pos_difference) / np.dot(vec_norm, vec_norm) * vec_norm
+        if np.linalg.norm(vec_proj_difference) > 0.1:
+            vibrate_cool_down = 100
+            if sys.platform == "linux":
+                high(VIBROGPIO)
+            else:
+                canvas.itemconfig(vibro_ind, fill="red")
+
+        # print(pos_difference, vec_norm, np.linalg.norm(vec_proj_difference))
 
         
     # elif (val_data[int(pos[1]), int(pos[0]), 0] == -2):
