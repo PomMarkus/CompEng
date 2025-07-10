@@ -561,15 +561,34 @@ def show_finished_overlay():
 close_button = tk.Button(window, text="✕", command=close_app, font=("Arial", 14, "bold"), bg="red", fg="white", bd=0, relief="flat", cursor="hand2")
 close_button.place(x=780, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
-pause_button = tk.Button(window, text="\u23F8", command=pause_game, font=("Symbola"
-"", 12), bg="green", fg="white", bd=0, relief="flat", cursor="hand2")
+pause_button = tk.Button(window,
+                        text="\u23F8",
+                        command=pause_game,
+                        font=("Symbola", 12),
+                        bg="green",
+                        fg="white",
+                        bd=0,
+                        relief="flat",
+                        cursor="hand2")
+
 pause_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 pause_button.config(state="disabled")  # Initially disabled until game starts
 
 # reset_button = tk.Button(window, text="\u27F3", command=reset_game, font=("Arial", 14, "bold"), bg="blue", fg="white", bd=0, relief="flat", cursor="hand2")
 # reset_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
-code_button = tk.Button(window, text="\U0001F511", command=lambda: [pause_game(), show_code_overlay()], font=("Arial", 12, "bold"), bg="#471F01", fg="white", bd=0, relief="flat", cursor="hand2", highlightbackground="#471F01")
+code_button = tk.Button(window,
+                        text="\U0001F511",
+                        command=lambda: [pause_game(), show_code_overlay()],
+                        font=("Arial", 12, "bold"),
+                        bg="#471F01",
+                        fg="white",
+                        activebackground="#471F01",
+                        activeforeground="white",
+                        bd=0,
+                        relief="flat",
+                        cursor="hand2",
+                        highlightbackground="#471F01")
 
 
 hole_status_text = canvas.create_text(400, 3, text=f"Fell into holes: {fell_into_holes}", font=("Arial", 10, "bold"), fill="white", anchor="n")
