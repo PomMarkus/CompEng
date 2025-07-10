@@ -487,8 +487,8 @@ def pause_game():
 def start_game():
     global overlay_button, overlay_label
     reset_game()  # Reset game state
-    overlay_label.config(text="Game is unlocked! Press Start to begin.")
-    overlay_button.config(state="normal", bg="green")
+    overlay_label.config(text="Try your luck if you dare!")
+    overlay_button.config(state="normal", bg="green", text="Go")
     pause_button.config(state="normal")  # Enable pause button
 
 
@@ -606,10 +606,10 @@ semi_transparent_overlay = canvas.create_rectangle(0, 0, WIDTH, HEIGHT, fill="#4
 overlay = canvas.create_rectangle(200, 140, 600, 340, fill="#eeeeee", outline="black")
 overlay_frame = tk.Frame(window, bg="#eeeeee", bd=3, relief="ridge")
 overlay_frame.place(x=200, y=140, width=400, height=200)
-overlay_label = tk.Label(overlay_frame, text="Tilt Maze is not yet unlocked!", bg="#eeeeee", font=("Arial", 14, "bold"))
+overlay_label = tk.Label(overlay_frame, text="You are not yet qualified!", bg="#eeeeee", font=("Arial", 14, "bold"))
 overlay_label.pack(pady=30)
 overlay_button = tk.Button(overlay_frame, 
-                           text="  Start  ", 
+                           text="  -----  ", 
                            state="disabled", 
                            command=lambda: [overlay_frame.destroy(), canvas.delete(overlay), canvas.delete(semi_transparent_overlay), window.after(DT, update_pos), code_button.place(x=0, y=460, width=20, height=20) ],
                            bg="#eeeeee", font=("Arial", 16, "bold"))
