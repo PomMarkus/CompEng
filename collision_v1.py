@@ -268,7 +268,7 @@ for obj in objects:
 # ====================================================================
 
 window = tk.Tk()
-window.title("Game map")
+window.title("Tilt Maze")
 window.geometry("800x480")
 if control_mode == "mpu6050":
     window.attributes('-fullscreen', True)
@@ -338,7 +338,7 @@ def update_pos():
         pos = start_point.copy()
         vel = np.array([0, 0], dtype=float)
         pause_game()
-        canvas.itemconfig(pause_button, state="disabled")
+        pause_button.config(state="disabled")
         show_code_overlay()
     ax, ay = get_acceleration()
 
