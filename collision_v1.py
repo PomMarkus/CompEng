@@ -125,6 +125,7 @@ client.loop_start()
 
 if sys.platform == "linux":
     import RPi.GPIO as GPIO
+    GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(VIBROGPIO, GPIO.OUT)
 
