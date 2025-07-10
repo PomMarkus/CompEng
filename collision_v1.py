@@ -3,6 +3,7 @@ import tkinter as tk
 import time
 import sys
 import numpy as np
+import re
 
 import paho.mqtt.client as mqtt
 
@@ -12,6 +13,7 @@ with open("config.json") as f:
 control_mode = config.get("control", "keyboard")  # Default to keyboard if not specified
 mpl_Debug = config.get("mpl_debug", False)  # Default to False if not specified
 checkpoint_names = config.get("checkpoints", "1H\t9O\t7L\t0E")
+digit_code = re.sub(r'\D', '', checkpoint_names)  # Extract digits from checkpoint names
 
 if control_mode not in ["keyboard", "mpu6050"]:
     raise ValueError(f"Invalid control mode: {control_mode}. Choose 'keyboard' or 'mpu6050'.")
@@ -329,13 +331,15 @@ def update_pos():
     normal_vectors = set()
 
     if checkpoint_counter >= len(checkpoints) and not is_finished:
+    # if not is_finished:
         is_finished = True
         canvas.itemconfig(ball, fill="gold", outline="gold")
         start_point = start_point_default.copy()
         pos = start_point.copy()
         vel = np.array([0, 0], dtype=float)
-        client.publish(TOPIC + "/points", (5 * fell_into_holes) if fell_into_holes < 10 else 45)
         pause_game()
+        canvas.itemconfig(pause_button, state="disabled")
+        show_code_overlay()
     ax, ay = get_acceleration()
 
     vel[0] += ACC_SCALE * ax * DT / 1000
@@ -478,12 +482,76 @@ def start_game():
     overlay_label.config(text="Game is unlocked! Press Start to begin.")
     overlay_button.config(state="normal", bg="green")
     pause_button.config(state="normal")  # Enable pause button
-    
+
+
+def show_code_overlay():
+    global client
+    # Overlay background (semi-transparent)
+    # code_overlay_bg = canvas.create_rectangle(
+    #     0, 0, WIDTH, HEIGHT, fill="#000000", outline="", stipple="gray50"
+    # )
+    # Centered overlay frame
+    overlay_w, overlay_h = 300, 323
+    overlay_x = (WIDTH - overlay_w) // 2
+    overlay_y = (HEIGHT - overlay_h) // 2
+    code_overlay = tk.Frame(window, bg="#eeeeee", bd=3, relief="ridge")
+    code_overlay.place(x=overlay_x, y=overlay_y, width=overlay_w, height=overlay_h)
+
+    # Display area for entered code
+    code_var = tk.StringVar()
+    code_entry = tk.Entry(code_overlay, textvariable=code_var, font=("Arial", 24), justify="center", state="readonly", readonlybackground="#ffffff")
+    code_entry.pack(pady=(20, 10), padx=20, fill="x")
+
+    # Numpad button handler
+    def numpad_press(val):
+        global client
+        if val == "Del":
+            code_var.set(code_var.get()[:-1])
+        elif val == "OK":
+            # Handle code confirmation here
+            if code_var.get() == digit_code:
+                code_overlay.destroy()
+                client.publish(TOPIC + "/general", "finished")
+                client.publish(TOPIC + "/points", (5 * fell_into_holes) if fell_into_holes < 10 else 45)
+                show_finished_overlay()
+            else:
+                code_var.set("")
+        else:
+            if len(code_var.get()) < 4:
+                code_var.set(code_var.get() + val)
+
+    # Numpad layout
+    btns = [
+        ["1", "2", "3"],
+        ["4", "5", "6"],
+        ["7", "8", "9"],
+        ["Del", "0", "OK"]
+    ]
+    btn_frame = tk.Frame(code_overlay, bg="#eeeeee")
+    btn_frame.pack(pady=10)
+    for r, row in enumerate(btns):
+        for c, val in enumerate(row):
+            b = tk.Button(
+                btn_frame, text=val, width=5, height=1, font=("Arial", 16),
+                command=lambda v=val: numpad_press(v)
+            )
+            b.grid(row=r, column=c, padx=5, pady=5)
+
+
+def show_finished_overlay():
+    semi_transparent_finished_overlay = canvas.create_rectangle(0, 0, WIDTH, HEIGHT, fill="#424242", outline="", stipple="gray50")
+    finished_overlay = canvas.create_rectangle(200, 140, 600, 340, fill="#eeeeee", outline="black")
+    finished_overlay_frame = tk.Frame(window, bg="#eeeeee", bd=3, relief="ridge")
+    finished_overlay_frame.place(x=200, y=140, width=400, height=200)
+    finished_overlay_label = tk.Label(finished_overlay_frame, text="Finished!", bg="#eeeeee", fg="green", font=("Arial", 18, "bold"))
+    finished_overlay_label.pack(pady=75)
+
 
 close_button = tk.Button(window, text="✕", command=close_app, font=("Arial", 14, "bold"), bg="red", fg="white", bd=0, relief="flat", cursor="hand2")
 close_button.place(x=780, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
-pause_button = tk.Button(window, text="\u23F8", command=pause_game, font=("Symbola", 12), bg="green", fg="white", bd=0, relief="flat", cursor="hand2")
+pause_button = tk.Button(window, text="\u23F8", command=pause_game, font=("Symbola"
+"", 12), bg="green", fg="white", bd=0, relief="flat", cursor="hand2")
 pause_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 pause_button.config(state="disabled")  # Initially disabled until game starts
 
@@ -500,16 +568,16 @@ if sys.platform != "linux":
 semi_transparent_overlay = canvas.create_rectangle(0, 0, WIDTH, HEIGHT, fill="#424242", outline="", stipple="gray50")
 
 overlay = canvas.create_rectangle(200, 140, 600, 340, fill="#eeeeee", outline="black")
-overlay_frame = tk.Frame(window, bg="#eeeeee")
+overlay_frame = tk.Frame(window, bg="#eeeeee", bd=3, relief="ridge")
 overlay_frame.place(x=200, y=140, width=400, height=200)
 overlay_label = tk.Label(overlay_frame, text="Tilt Maze is not yet unlocked!", bg="#eeeeee", font=("Arial", 14, "bold"))
 overlay_label.pack(pady=30)
 overlay_button = tk.Button(overlay_frame, 
-                           text="Start Game", 
+                           text="  Start  ", 
                            state="disabled", 
                            command=lambda: [overlay_frame.destroy(), canvas.delete(overlay), canvas.delete(semi_transparent_overlay), window.after(DT, update_pos)],
-                           bg="#eeeeee", font=("Arial", 12))
-overlay_button.pack(pady=20)
+                           bg="#eeeeee", font=("Arial", 16, "bold"))
+overlay_button.pack(pady=15)
 
 # popup = tk.Toplevel(window)
 # popup.title("Tilt Maze")
@@ -532,7 +600,7 @@ if control_mode == "keyboard":
 if control_mode == "mpu6050":
     window.after(100, go_fullscreen)
 # =====================
-if True:
+if False:
     start_game()
 # =====================
 window.mainloop()
