@@ -14,6 +14,8 @@ control_mode = config.get("control", "keyboard")  # Default to keyboard if not s
 mpl_Debug = config.get("mpl_debug", False)  # Default to False if not specified
 checkpoint_names = config.get("checkpoints", "1H\t9O\t7L\t0E")
 digit_code = re.sub(r'\D', '', checkpoint_names)  # Extract digits from checkpoint names
+parsed_checkpoint_names = checkpoint_names.split("\t")
+parsed_checkpoint_names = [parsed_checkpoint_names[2], parsed_checkpoint_names[1], parsed_checkpoint_names[0], parsed_checkpoint_names[3]]  # Reorder checkpoints
 
 if control_mode not in ["keyboard", "mpu6050"]:
     raise ValueError(f"Invalid control mode: {control_mode}. Choose 'keyboard' or 'mpu6050'.")
