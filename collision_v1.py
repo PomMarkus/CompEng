@@ -135,7 +135,7 @@ if sys.platform == "linux":
 objects = []
 start_point = np.array([0, 0], dtype=float)
 
-checkpoints = np.array(list(zip(np.empty(4), np.zeros(4, dtype=int), np.empty(4), checkpoint_names.split("\t"))), dtype=object)
+checkpoints = np.array(list(zip(np.empty(4), np.zeros(4, dtype=int), np.empty(4), parsed_checkpoint_names)), dtype=object)
 
 
 
