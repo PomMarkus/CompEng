@@ -493,7 +493,7 @@ def start_game():
 
 
 def show_code_overlay():
-    global client, code_overlay_flag, digit_code, code_overlay, pause_button
+    global client, code_overlay_flag, digit_code, code_overlay, pause_button, code_button
     if code_overlay_flag:
         code_overlay_flag = False
         code_overlay.destroy()
@@ -523,6 +523,8 @@ def show_code_overlay():
             # Handle code confirmation here
             if code_var.get() == digit_code:
                 code_overlay.destroy()
+                pause_button.place_forget()  # Hide pause button
+                code_button.place_forget()
                 client.publish(TOPIC + "/general", "finished")
                 client.publish(TOPIC + "/points", (5 * fell_into_holes) if fell_into_holes < 10 else 45)
                 show_finished_overlay()
