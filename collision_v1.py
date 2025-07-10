@@ -568,7 +568,7 @@ pause_button.config(state="disabled")  # Initially disabled until game starts
 # reset_button = tk.Button(window, text="\u27F3", command=reset_game, font=("Arial", 14, "bold"), bg="blue", fg="white", bd=0, relief="flat", cursor="hand2")
 # reset_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
-code_button = tk.Button(window, text="\U0001F511", command=lambda: [pause_game(), show_code_overlay()], font=("Arial", 14, "bold"), bg="#471F01", fg="white", bd=0, relief="flat", cursor="hand2")
+code_button = tk.Button(window, text="\U0001F511", command=lambda: [pause_game(), show_code_overlay()], font=("Arial", 12, "bold"), bg="#471F01", fg="white", bd=0, relief="flat", cursor="hand2", highlightthickness=0, highlightbackground="#471F01")
 
 
 hole_status_text = canvas.create_text(400, 3, text=f"Fell into holes: {fell_into_holes}", font=("Arial", 10, "bold"), fill="white", anchor="n")
