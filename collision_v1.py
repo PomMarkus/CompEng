@@ -88,12 +88,14 @@ def on_connect(client, userdata, flags, rc):
 
 
 def on_message(client, userdata, msg):
+    global is_started
     print(f"Received message on topic {msg.topic}: {msg.payload.decode()}")
     if msg.topic == TOPIC + "/general":
         if msg.payload.decode() == "initialize":
             client.publish(TOPIC + "/general", "initialize_ack")
 
-        elif msg.payload.decode() == "start":
+        elif msg.payload.decode() == "start" and not is_started:
+            is_started = True
             client.publish(TOPIC + "/general", "start_ack")
             start_game()
 
@@ -109,14 +111,16 @@ print("trying to connect to MQTT broker...")
 client.connect(BROKER, PORT, 30)
 
 
-client.loop_start()
-
 
 is_paused = False
 is_finished = False
+is_started = False
+code_overlay_flag = False
 fell_into_holes = 0
 hole_cool_down = 0
 vibrate_cool_down = 0
+
+client.loop_start()
 
 
 if sys.platform == "linux":
@@ -304,7 +308,7 @@ ball = canvas.create_oval(int(pos[0]) - RADIUS + 1, int(pos[1]) - RADIUS + 1, in
 checkpoint_counter = 0
 
 def update_pos():
-    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused, is_finished, hole_status_text, client
+    global pos, vel, start_point, hole_cool_down, vibrate_cool_down, fell_into_holes, checkpoint_counter, checkpoints, ball, val_data, is_paused, is_finished, hole_status_text, client, vibro_ind
 
     if is_paused:
         return
@@ -341,6 +345,7 @@ def update_pos():
         vel = np.array([0, 0], dtype=float)
         pause_game()
         pause_button.config(state="disabled")
+        code_button.config(state="disabled")
         show_code_overlay()
     ax, ay = get_acceleration()
 
@@ -487,11 +492,13 @@ def start_game():
 
 
 def show_code_overlay():
-    global client
-    # Overlay background (semi-transparent)
-    # code_overlay_bg = canvas.create_rectangle(
-    #     0, 0, WIDTH, HEIGHT, fill="#000000", outline="", stipple="gray50"
-    # )
+    global client, code_overlay_flag, digit_code, code_overlay
+    if code_overlay_flag:
+        code_overlay_flag = False
+        code_overlay.destroy()
+        return
+    code_overlay_flag = True
+
     # Centered overlay frame
     overlay_w, overlay_h = 300, 323
     overlay_x = (WIDTH - overlay_w) // 2
@@ -506,7 +513,7 @@ def show_code_overlay():
 
     # Numpad button handler
     def numpad_press(val):
-        global client
+        global client, digit_code
         if val == "Del":
             code_var.set(code_var.get()[:-1])
         elif val == "OK":
@@ -560,6 +567,9 @@ pause_button.config(state="disabled")  # Initially disabled until game starts
 # reset_button = tk.Button(window, text="\u27F3", command=reset_game, font=("Arial", 14, "bold"), bg="blue", fg="white", bd=0, relief="flat", cursor="hand2")
 # reset_button.place(x=0, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
+code_button = tk.Button(window, text="\uD83D\uDD11", command=lambda: [pause_game(), show_code_overlay()], font=("Arial", 14, "bold"), bg="#471F01", fg="white", bd=0, relief="flat", cursor="hand2")
+
+
 hole_status_text = canvas.create_text(400, 3, text=f"Fell into holes: {fell_into_holes}", font=("Arial", 10, "bold"), fill="white", anchor="n")
 
 vibro_ind = None
@@ -577,9 +587,11 @@ overlay_label.pack(pady=30)
 overlay_button = tk.Button(overlay_frame, 
                            text="  Start  ", 
                            state="disabled", 
-                           command=lambda: [overlay_frame.destroy(), canvas.delete(overlay), canvas.delete(semi_transparent_overlay), window.after(DT, update_pos)],
+                           command=lambda: [overlay_frame.destroy(), canvas.delete(overlay), canvas.delete(semi_transparent_overlay), window.after(DT, update_pos), code_button.place(x=0, y=460, width=20, height=20) ],
                            bg="#eeeeee", font=("Arial", 16, "bold"))
 overlay_button.pack(pady=15)
+
+code_overlay = None
 
 # popup = tk.Toplevel(window)
 # popup.title("Tilt Maze")
