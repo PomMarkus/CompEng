@@ -347,6 +347,7 @@ def update_pos():
         pause_game()
         pause_button.config(state="disabled")
         code_button.config(state="disabled")
+        code_button.place_forget()
         show_code_overlay()
     ax, ay = get_acceleration()
 
