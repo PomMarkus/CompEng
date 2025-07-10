@@ -398,7 +398,7 @@ def update_pos():
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -2):
             vel = np.array([0, 0], dtype=float)
             fell_into_holes += 1
-            canvas.itemconfig(hole_status_text, text=f"Fell into holes: {fell_into_holes}")
+            canvas.itemconfig(hole_status_text, text=f"Caught by {fell_into_holes} hole{'s' if fell_into_holes != 1 else ''}")
             hole_cool_down = 500  # Cooldown for falling into a hole
             break
         elif (val_data[int(temp_pos[1]), int(temp_pos[0]), 0] == -3):
@@ -594,7 +594,7 @@ code_button = tk.Button(window,
                         highlightbackground="#471F01")
 
 
-hole_status_text = canvas.create_text(400, 3, text=f"Fell into holes: {fell_into_holes}", font=("Arial", 10, "bold"), fill="white", anchor="n")
+hole_status_text = canvas.create_text(400, 3, text=f"Caught by {fell_into_holes} hole{'s' if fell_into_holes != 1 else ''}", font=("Arial", 10, "bold"), fill="white", anchor="n")
 
 vibro_ind = None
 if sys.platform != "linux":
