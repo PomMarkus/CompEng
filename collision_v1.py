@@ -345,7 +345,6 @@ def update_pos():
         pos = start_point.copy()
         vel = np.array([0, 0], dtype=float)
         pause_game()
-        pause_button.config(state="disabled")
         code_button.config(state="disabled")
         code_button.place_forget()
         show_code_overlay()
@@ -494,12 +493,14 @@ def start_game():
 
 
 def show_code_overlay():
-    global client, code_overlay_flag, digit_code, code_overlay
+    global client, code_overlay_flag, digit_code, code_overlay, pause_button
     if code_overlay_flag:
         code_overlay_flag = False
         code_overlay.destroy()
+        pause_button.config(state="normal")  # Enable pause button
         return
     code_overlay_flag = True
+    pause_button.config(state="disabled")  # Disable pause button while code overlay is active
 
     # Centered overlay frame
     overlay_w, overlay_h = 300, 323
@@ -558,13 +559,13 @@ def show_finished_overlay():
     finished_overlay_label.pack(pady=75)
 
 
-close_button = tk.Button(window, text="✕", command=close_app, font=("Arial", 14, "bold"), bg="red", fg="white", bd=0, relief="flat", cursor="hand2")
+close_button = tk.Button(window, text="✕", command=close_app, font=("Arial", 12, "bold"), bg="red", fg="white", bd=0, relief="flat", cursor="hand2")
 close_button.place(x=780, y=0, width=20, height=20)  # Top-left corner (adjust x, y for top-right if needed)
 
 pause_button = tk.Button(window,
                         text="\u23F8",
                         command=pause_game,
-                        font=("Symbola", 12),
+                        font=("Symbola", 10),
                         bg="green",
                         fg="white",
                         bd=0,
@@ -580,7 +581,7 @@ pause_button.config(state="disabled")  # Initially disabled until game starts
 code_button = tk.Button(window,
                         text="\U0001F511",
                         command=lambda: [pause_game(), show_code_overlay()],
-                        font=("Arial", 12, "bold"),
+                        font=("Arial", 10, "bold"),
                         bg="#471F01",
                         fg="white",
                         activebackground="#471F01",
