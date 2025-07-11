@@ -90,16 +90,16 @@ def on_connect(client, userdata, flags, rc):
 def on_message(client, userdata, msg):
     global is_started
     print(f"Received message on topic {msg.topic}: {msg.payload.decode()}")
-    if msg.topic == TOPIC + "/general":
-        if msg.payload.decode() == "initialize":
+    if (msg.topic == TOPIC + "/general") and (msg.payload.decode() == "initialize"):
             client.publish(TOPIC + "/general", "initialize_ack")
-
-        elif msg.payload.decode() == "start" and not is_started:
             is_started = True
             client.publish(TOPIC + "/general", "start_ack")
             start_game()
 
+            
+
 client = mqtt.Client()
+
 
 client.username_pw_set(USERNAME, PASSWORD)
 
@@ -107,7 +107,7 @@ client.on_connect = on_connect
 client.on_message = on_message
 
 
-print("trying to connect to MQTT broker...")
+# print("trying to connect to MQTT broker...")
 client.connect(BROKER, PORT, 30)
 
 
