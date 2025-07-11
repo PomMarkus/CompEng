@@ -75,11 +75,11 @@ HOLERADIUS = 12
 FANGPIO = 15
 VIBROGPIO = 14
 
-BROKER = "tanzwg.jkub.com"
+BROKER = "192.168.0.2"
 PORT = 1883
 TOPIC = "pr_embedded/puzzle_tilt_maze"
-USERNAME = "SETTLE DOWN"
-PASSWORD = "NEULAND"
+USERNAME = "user"
+PASSWORD = "user"
 
 def on_connect(client, userdata, flags, rc):
     print(f"Connected to MQTT broker with result code {rc}")
