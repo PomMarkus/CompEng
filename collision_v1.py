@@ -527,8 +527,8 @@ def show_code_overlay():
                 code_overlay.destroy()
                 pause_button.place_forget()  # Hide pause button
                 code_button.place_forget()
-                client.publish(TOPIC + "/general", "finished")
                 client.publish(TOPIC + "/points", (5 * fell_into_holes) if fell_into_holes < 10 else 45)
+                client.publish(TOPIC + "/general", "finished")
                 show_finished_overlay()
             else:
                 code_var.set("")
