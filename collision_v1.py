@@ -344,7 +344,6 @@ def update_pos():
         start_point = start_point_default.copy()
         pos = start_point.copy()
         vel = np.array([0, 0], dtype=float)
-        pause_game()
         code_button.config(state="disabled")
         code_button.place_forget()
         show_code_overlay()
@@ -493,13 +492,16 @@ def start_game():
 
 
 def show_code_overlay():
-    global client, code_overlay_flag, digit_code, code_overlay, pause_button, code_button
+    global client, code_overlay_flag, digit_code, code_overlay, pause_button, code_button, is_paused
     if code_overlay_flag:
         code_overlay_flag = False
         code_overlay.destroy()
+        pause_game()
         pause_button.config(state="normal")  # Enable pause button
         return
     code_overlay_flag = True
+    if not is_paused:
+        pause_game()
     pause_button.config(state="disabled")  # Disable pause button while code overlay is active
 
     # Centered overlay frame
@@ -582,7 +584,7 @@ pause_button.config(state="disabled")  # Initially disabled until game starts
 
 code_button = tk.Button(window,
                         text="\U0001F511",
-                        command=lambda: [pause_game(), show_code_overlay()],
+                        command=show_code_overlay,
                         font=("Arial", 10, "bold"),
                         bg="#471F01",
                         fg="white",
