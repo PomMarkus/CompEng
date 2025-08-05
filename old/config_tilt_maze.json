@@ -1,0 +1,36 @@
+{
+    "name": "Tilt Maze",
+    "description": "In this challenge you have to find a 4 digit code which is hidden in the maze. If you have reached your goals, use your language skills to find a meaning in the symbols.",
+    "points": 100,
+    "hints": [
+        {
+            "name": "General approach",
+            "text": "Try to move the blue ball to the orange checkpoints\nwithout falling into the black holes by tilting the maze.",
+            "points": 5
+        },
+        {
+            "name": "What to uncover",
+            "text": "The symbols are: 9O\t0E\t7L\t1H",
+            "points": 10
+        },
+        {
+            "name": "Decoding",
+            "text": "Try to find a word in the letters you have found\nand sort the numbers accordingly.",
+            "points": 10
+        },
+        {
+            "name": "Partial solution",
+            "text": "The Word you are looking for is 'HOLE'.",
+            "points": 10
+        },
+        {
+            "name": "Complete solution",
+            "text": "The solution is '1970'. Press the 'key' button on the\nbottom left to open the keyboard and enter the code.",
+            "points": 20
+        }
+    ],
+    "mqtt":
+    {
+        "topic": "pr_embedded/puzzle_tilt_maze"
+    }
+}
