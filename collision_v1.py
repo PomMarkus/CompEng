@@ -78,7 +78,7 @@ VIBROGPIO = 14
 BROKER = "tanzwg.jkub.com"
 PORT = 1883
 TOPIC = "pr_embedded/puzzle_tilt_maze"
-USERNAME = "SETTLODOWN"
+USERNAME = "SETTLE DOWN"
 PASSWORD = "NEULAND"
 
 def on_connect(client, userdata, flags, rc):
