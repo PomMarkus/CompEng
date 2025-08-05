@@ -75,11 +75,11 @@ HOLERADIUS = 12
 FANGPIO = 15
 VIBROGPIO = 14
 
-BROKER = "192.168.0.2"
+BROKER = "tanzwg.jkub.com"
 PORT = 1883
 TOPIC = "pr_embedded/puzzle_tilt_maze"
-USERNAME = "user"
-PASSWORD = "user"
+USERNAME = "SETTLODOWN"
+PASSWORD = "NEULAND"
 
 def on_connect(client, userdata, flags, rc):
     print(f"Connected to MQTT broker with result code {rc}")
@@ -93,7 +93,6 @@ def on_message(client, userdata, msg):
     if (msg.topic == TOPIC + "/general") and (msg.payload.decode() == "initialize"):
             client.publish(TOPIC + "/general", "initialize_ack")
             is_started = True
-            client.publish(TOPIC + "/general", "start_ack")
             start_game()
 
             
