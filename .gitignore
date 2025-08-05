@@ -4,3 +4,6 @@ map_v1 backup walls.dat
 modify_holes.py
 collision_v2.py
 config.json
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/settings.json
