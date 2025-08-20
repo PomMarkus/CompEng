@@ -119,7 +119,7 @@ fell_into_holes = 0
 hole_cool_down = 0
 vibrate_cool_down = 0
 
-client.loop_start()
+# client.loop_start()
 
 
 if sys.platform == "linux":
@@ -234,7 +234,7 @@ for obj in objects:
         subdata[subdata[:,:, 0] != 2] += np.array([0, 0, -1, 0]) # add the normalvector
         val_data[y1:y2, x1-RADIUS:x1] = subdata
 
-        # Create rectangle right - normalvector poibts right
+        # Create rectangle right - normalvector points right
         subdata = val_data[y1:y2, x2:x2+RADIUS]
         subdata[subdata[:,:, 0] <= 0, 0] = 1 # making sure, that the area around a wall element is marked as surrounding area only once
         subdata[subdata[:,:, 0] != 2] += np.array([0, 0, 1, 0]) # add the normalvector
@@ -638,6 +638,8 @@ if control_mode == "keyboard":
 
 if control_mode == "mpu6050":
     window.after(100, go_fullscreen)
+
+client.loop_start()
 # =====================
 if False:
     start_game()
