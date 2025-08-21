@@ -47,14 +47,9 @@ class GameApp:
         if self.config.control_mode == "keyboard":
             self.input_handler = KeyboardControl(self.window)
         elif self.config.control_mode == "mpu6050":
+            self.input_handler = MPU6050Control()
             if not self.input_handler.status():
                 self.input_handler = KeyboardControl(self.window)
-            else:
-                try:
-                    self.input_handler = MPU6050Control()
-                except RuntimeError as e:
-                    print("Failed to initialize MPU6050:", e)
-                    self.input_handler = KeyboardControl(self.window)
         
         self.is_running = False
         # self.is_finished = False

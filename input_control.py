@@ -60,7 +60,8 @@ class KeyboardControl(InputControl):
 class MPU6050Control(InputControl):
     def __init__(self):
         if mpu6050 is None:
-            raise ImportError("mpu6050 module not found")
+            self.sensor = None
+            return
         self.sensor = mpu6050(0x68)
 
     def status(self) -> bool:
