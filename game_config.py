@@ -27,6 +27,7 @@ class GameConfig:
         self.USERNAME = config_data.get("username", "SETTLE DOWN")
         self.PASSWORD = config_data.get("password", "NEULAND")
 
+        self.mqtt_failed = False
 
         if self.control_mode not in ["keyboard", "mpu6050"]:
             raise ValueError(f"Invalid control mode: {self.control_mode}. Choose 'keyboard' or 'mpu6050'.")

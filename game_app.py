@@ -334,7 +334,7 @@ class GameApp:
             bg="#eeeeee", 
             font=("Arial", 14, "bold")
             )
-        self.overlay.label.pack(pady=30)
+        self.overlay.label.pack(pady=25)
 
         self.overlay.button = tk.Button(self.overlay.frame, 
                            text="  -----  ", 
@@ -345,7 +345,17 @@ class GameApp:
                                self.code_button.place(x=0, y=460, width=20, height=20)
                            ],
                            bg="#eeeeee", font=("Arial", 16, "bold"))
-        self.overlay.button.pack(pady=15)
+        self.overlay.button.pack(pady=10)
+
+        if self.config.mqtt_failed:
+            mqtt_fail_label = tk.Label(
+                self.overlay.frame, 
+                text="MQTT Connection Failed!", 
+                bg="#eeeeee", 
+                fg="red",
+                font=("Arial", 8, "bold")
+                )
+            mqtt_fail_label.pack(pady=10)
 
     def _show_code_overlay(self):
         overlay_w, overlay_h = 300, 323
