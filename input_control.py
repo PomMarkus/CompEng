@@ -62,5 +62,12 @@ class MPU6050Control(InputControl):
         Returns:
             tuple[float, float]: _description_
         """
-        accel_data = self.sensor.get_accel_data()
-        return (accel_data['y'], -accel_data['x']) # Compensates sensor orientation
+        for i in range(10):
+            try:
+                accel_data = self.sensor.get_accel_data()
+                return (accel_data['y'], -accel_data['x']) # Compensates sensor orientation
+            except:
+                print("Error number: ", i)
+
+        return (0.0, 0.0)  # Return zero if sensor fails to read after retries
+        
