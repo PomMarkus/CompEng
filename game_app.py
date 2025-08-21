@@ -7,6 +7,7 @@ from mqtt_client import MQTTClient
 from input_control import KeyboardControl, MPU6050Control
 from vibro_motor import VibroMotor
 from overlay import Overlay
+import time
 
 # Check if mpu and mqtt work:  mqtt_enabled
 # decide in config if while game should be startet or just maze
@@ -37,7 +38,7 @@ class GameApp:
         self.game_map = GameMap(map_file_path, self.config)
         self.checkpoints: list[Checkpoint] = []
 
-        if self.config.puzzle_mode:
+        if self.config.online_mode:
             self.mqtt_client = MQTTClient(self.config)
             if not self.mqtt_client.client == None:
                 self.mqtt_client._reset_function = self._reset_game
@@ -56,6 +57,9 @@ class GameApp:
         self.fell_into_holes = 0
         self.hole_status_text = None
         self.hole_cool_down = 0
+        if not self.config.online_mode:
+            self.start_time = 0
+            self.time_passed = 0
 
         self.overlay = Overlay(self.canvas)
 
@@ -66,7 +70,7 @@ class GameApp:
         self._init_ui_elements()
         self._bind_events()
         self._overlay_handler("start")
-        if self.config.puzzle_mode:
+        if self.config.online_mode:
             self.mqtt_client.game_ready()
         else:
             self._reset_game()
@@ -157,7 +161,7 @@ class GameApp:
             relief="flat", 
             cursor="hand2")
         
-        if not self.config.puzzle_mode:
+        if not self.config.online_mode:
             self.reset_button.place(
                 x=self.config.screen_width - 20, 
                 y=self.config.screen_height - 20, 
@@ -173,6 +177,16 @@ class GameApp:
             anchor="n"
             )
         
+        if not self.config.online_mode:
+            self.time_text = self.canvas.create_text(
+                400,
+                460,
+                text=f"Time: 00:00.0",
+                font=("Arial", 10, "bold"),
+                fill="white",
+                anchor="n"
+            )
+
     def _bind_events(self):
         self.window.bind("<Escape>", self._end_fullscreen)
         if self.config.control_mode == "keyboard":
@@ -188,6 +202,13 @@ class GameApp:
     def _game_loop(self):
         if not self.is_running:
             return
+        self.window.after(self.config.time_step_size, self._game_loop)
+
+        if not self.config.online_mode:
+            self.time_passed = self.get_elapsed_time()
+            minutes = int(self.time_passed // 60)
+            seconds = self.time_passed % 60
+            self.canvas.itemconfig(self.time_text, text=f"Time: {minutes:02}:{seconds:04.1f}")
 
         self.vibro_motor.update()
 
@@ -197,7 +218,6 @@ class GameApp:
                 self.hole_cool_down = 0
                 self.ball.reset_position()
                 self.ball.reset_velocity()
-            self.window.after(self.config.time_step_size, self._game_loop)
             return
         
         acc_x, acc_y = self.input_handler.get_acceleration()
@@ -224,7 +244,6 @@ class GameApp:
                 self.pause_button.place_forget()
         
         self.ball.draw()
-        self.window.after(self.config.time_step_size, self._game_loop)
 
     def run(self):
         if self.config.control_mode == "mpu6050": # if on raspi
@@ -243,6 +262,7 @@ class GameApp:
         self.is_running = not self.is_running
         if self.is_running:
             self.pause_button.config(bg="green", text="\u23F8")
+            self.start_time = time.time() - self.time_passed
             self.window.after(self.config.time_step_size, self._game_loop)
         else:
             self.pause_button.config(bg="orange", text="\u25B6")
@@ -283,8 +303,15 @@ class GameApp:
         # reset is_finished
         # self.is_finished = False
 
+    def set_start_time(self):
+        if not self.config.online_mode:
+            self.start_time = time.time()
+    
+    def get_elapsed_time(self):
+        return time.time() - self.start_time
+
     def close_app(self):
-        if self.config.puzzle_mode:
+        if self.config.online_mode:
             self.mqtt_client.disconnect()
         self.vibro_motor.cleanup()
         self.window.destroy()
@@ -341,6 +368,7 @@ class GameApp:
                            state="disabled", 
                            command=lambda: [
                                self._overlay_handler("none"), 
+                               self.set_start_time(),
                                self.pause_button.place(x=0, y=0, width=20, height=20),
                                self.code_button.place(x=0, y=460, width=20, height=20)
                            ],
@@ -383,7 +411,7 @@ class GameApp:
                     self.overlay.frame.destroy()
                     self.code_button.place_forget()
                     self.pause_button.place_forget()
-                    if self.config.puzzle_mode:
+                    if self.config.online_mode:
                         self.mqtt_client.publish_result(self.fell_into_holes)
                     self._overlay_handler("finish")
                 else:
@@ -426,4 +454,17 @@ class GameApp:
             fg="green", 
             font=("Arial", 18, "bold")
             )
-        self.overlay.label.pack(pady=75)
+        if self.config.online_mode:
+            self.overlay.label.pack(pady=75)
+        else:
+            self.overlay.label.pack(pady=50)
+            minutes = int(self.time_passed // 60)
+            seconds = self.time_passed % 60
+            info_label = tk.Label(
+                self.overlay.frame,
+                text=f"Caught by {self.fell_into_holes} hole{'s' if self.fell_into_holes != 1 else ''}\t\tTime: {minutes:02}:{seconds:04.1f}",
+                bg="#eeeeee",
+                fg="black",
+                font=("Arial", 12)
+            )
+            info_label.pack(pady=10)

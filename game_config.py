@@ -6,7 +6,7 @@ class GameConfig:
             config_data = json.load(file)
 
         self.control_mode = config_data.get("control", "keyboard")
-        self.puzzle_mode = config_data.get("puzzle_mode", True)
+        self.online_mode = config_data.get("online_mode", True)
         self.mpl_debug = config_data.get("mpl_debug", False)
         self.checkpoint_namestring = config_data.get("checkpoints", "1H\t9O\t7L\t0E")
         self.time_step_size = config_data.get("time_step_size", 20)

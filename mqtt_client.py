@@ -33,7 +33,7 @@ class MQTTClient:
             self.connected = True
         else:
             print(f"Failed to connect to MQTT broker, return code: {rc}")
-            self.config.puzzle_mode = False
+            self.config.online_mode = False
             self.config.mqtt_failed = True
 
     def _on_message(self, client, userdata, msg):
