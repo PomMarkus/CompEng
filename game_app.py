@@ -284,7 +284,8 @@ class GameApp:
         # self.is_finished = False
 
     def close_app(self):
-        self.mqtt_client.disconnect()
+        if self.config.puzzle_mode:
+            self.mqtt_client.disconnect()
         self.vibro_motor.cleanup()
         self.window.destroy()
 
