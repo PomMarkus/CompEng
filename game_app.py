@@ -67,11 +67,7 @@ class GameApp:
         self._bind_events()
         self._overlay_handler("start")
         if self.config.puzzle_mode:
-            if self.mqtt_client.connected:
-                self.mqtt_client.game_ready()
-            else:
-                self._reset_game()
-                self._unlock_game()
+            self.mqtt_client.game_ready()
         else:
             self._reset_game()
             self._unlock_game()
@@ -219,6 +215,9 @@ class GameApp:
         elif "checkpoint" in update_result:
             if all(cp.is_reached for cp in self.checkpoints):
                 # self.is_finished = True
+                self.game_map.reset_start_point()
+                self.ball.reset_position()
+                self.ball.reset_velocity()
                 self._overlay_handler("code")
                 self.code_button.config(state="disabled")
                 self.code_button.place_forget()
@@ -373,7 +372,8 @@ class GameApp:
                     self.overlay.frame.destroy()
                     self.code_button.place_forget()
                     self.pause_button.place_forget()
-                    self.mqtt_client.publish_result(self.fell_into_holes)
+                    if self.config.puzzle_mode:
+                        self.mqtt_client.publish_result(self.fell_into_holes)
                     self._overlay_handler("finish")
                 else:
                     code_var.set("")
