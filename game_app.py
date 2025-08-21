@@ -262,7 +262,8 @@ class GameApp:
         self.is_running = not self.is_running
         if self.is_running:
             self.pause_button.config(bg="green", text="\u23F8")
-            self.start_time = time.time() - self.time_passed
+            if not self.config.online_mode:
+                self.start_time = time.time() - self.time_passed
             self.window.after(self.config.time_step_size, self._game_loop)
         else:
             self.pause_button.config(bg="orange", text="\u25B6")
