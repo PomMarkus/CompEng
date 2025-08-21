@@ -37,18 +37,24 @@ class GameApp:
         self.game_map = GameMap(map_file_path, self.config)
         self.checkpoints: list[Checkpoint] = []
 
-        self.mqtt_client = MQTTClient(self.config) # test if self.mqtt_client.client == None
-        self.mqtt_client._reset_function = self._reset_game
-        self.mqtt_client._unlock_function = self._unlock_game
+        if self.config.puzzle_mode:
+            self.mqtt_client = MQTTClient(self.config)
+            if not self.mqtt_client.client == None:
+                self.mqtt_client._reset_function = self._reset_game
+                self.mqtt_client._unlock_function = self._unlock_game
+                self.mqtt_client.connect_and_loop()
 
         if self.config.control_mode == "keyboard":
             self.input_handler = KeyboardControl(self.window)
         elif self.config.control_mode == "mpu6050":
-            try:
-                self.input_handler = MPU6050Control()
-            except RuntimeError as e:
-                print("Failed to initialize MPU6050:", e)
+            if not self.input_handler.status():
                 self.input_handler = KeyboardControl(self.window)
+            else:
+                try:
+                    self.input_handler = MPU6050Control()
+                except RuntimeError as e:
+                    print("Failed to initialize MPU6050:", e)
+                    self.input_handler = KeyboardControl(self.window)
         
         self.is_running = False
         # self.is_finished = False
@@ -65,7 +71,16 @@ class GameApp:
         self._init_ui_elements()
         self._bind_events()
         self._overlay_handler("start")
-        self.mqtt_client.connect_and_loop()
+        if self.config.puzzle_mode:
+            if self.mqtt_client.connected:
+                self.mqtt_client.game_ready()
+            else:
+                self._reset_game()
+                self._unlock_game()
+        else:
+            self._reset_game()
+            self._unlock_game()
+
 
     def _init_checkpoints(self):
         for cp_data in self.game_map.get_checkpoint_init_data():
@@ -140,7 +155,24 @@ class GameApp:
         #     height=20
         #     )
 
+        self.reset_button = tk.Button(
+            self.window, 
+            text="\u27F3", 
+            command = lambda: [self._reset_game(), self._unlock_game()], 
+            font=("DejaVu Sans", 14), 
+            bg="blue", 
+            fg="white", 
+            bd=0, 
+            relief="flat", 
+            cursor="hand2")
         
+        if not self.config.puzzle_mode:
+            self.reset_button.place(
+                x=self.config.screen_width - 20, 
+                y=self.config.screen_height - 20, 
+                width=20, 
+                height=20)
+
         self.hole_status_text = self.canvas.create_text(
             400, 
             3, 

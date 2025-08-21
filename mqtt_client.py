@@ -18,6 +18,10 @@ class MQTTClient:
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
 
+        self.connected = False
+        self.game_is_ready = False
+        self.is_initialized = False
+
         self._reset_function = None
         self._unlock_function = None
 
@@ -26,14 +30,29 @@ class MQTTClient:
             print("Connected to MQTT broker")
             client.publish(self.config.TOPIC+"/general", "Connected")
             client.subscribe(self.config.TOPIC+"/general")
+            self.connected = True
         else:
             print(f"Failed to connect to MQTT broker, return code: {rc}")
+            self.config.puzzle_mode = False
         
     def _on_message(self, client, userdata, msg):
         print(f"Message received on topic {msg.topic}: {msg.payload.decode()}")
         if (msg.topic == self.config.TOPIC+"/general" and 
             msg.payload.decode() == "initialize"):
             client.publish(self.config.TOPIC + "/general", "initialize_ack")
+            if self.game_is_ready:
+                if self._reset_function:
+                    self._reset_function()
+                if self._unlock_function:
+                    self._unlock_function()
+            else:
+                self.is_initialized = True
+
+    def game_ready(self):
+        if self.game_is_ready:
+            return
+        self.game_is_ready = True
+        if self.is_initialized:
             if self._reset_function:
                 self._reset_function()
             if self._unlock_function:
@@ -54,3 +73,4 @@ class MQTTClient:
         if self.client:
             self.client.loop_stop()
             self.client.disconnect()
+            self.connected = False

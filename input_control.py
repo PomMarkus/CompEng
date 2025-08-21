@@ -13,6 +13,10 @@ else:
 
 class InputControl(ABC):
     @abstractmethod
+    def status(self) -> bool:
+        pass
+
+    @abstractmethod
     def get_acceleration(self) -> tuple[float, float]:
         pass
 
@@ -28,6 +32,9 @@ class KeyboardControl(InputControl):
     
     def _on_key_release(self, event):
         self.pressend_keys.discard(event.keysym)
+
+    def status(self) -> bool:
+        return True
 
     def get_acceleration(self) -> tuple[float, float]:
         """_summary_
@@ -55,7 +62,13 @@ class MPU6050Control(InputControl):
         if mpu6050 is None:
             raise ImportError("mpu6050 module not found")
         self.sensor = mpu6050(0x68)
-    
+
+    def status(self) -> bool:
+        if mpu6050 is not None:
+            return True
+        else:
+            return False
+
     def get_acceleration(self) -> tuple[float, float]:
         """_summary_
 
