@@ -67,7 +67,7 @@ class MPU6050Control(InputControl):
                 accel_data = self.sensor.get_accel_data()
                 return (accel_data['y'], -accel_data['x']) # Compensates sensor orientation
             except:
-                print("Error number: ", i)
+                print("MPU Error count: ", i + 1)
 
         return (0.0, 0.0)  # Return zero if sensor fails to read after retries
         
