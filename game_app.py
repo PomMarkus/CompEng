@@ -207,7 +207,7 @@ class GameApp:
         if not self.config.online_mode:
             self.time_passed = self.get_elapsed_time()
             minutes = int(self.time_passed // 60)
-            seconds = int(self.time_passed) % 60
+            seconds = self.time_passed % 60
             self.canvas.itemconfig(self.time_text, text=f"Time: {minutes:02}:{seconds:04.1f}")
 
         self.vibro_motor.update()
@@ -295,6 +295,9 @@ class GameApp:
             self.hole_status_text, 
             text=f"Caught by {self.fell_into_holes} hole{'s' if self.fell_into_holes != 1 else ''}"
         )
+        # reset time text
+        if not self.config.online_mode:
+            self.canvas.itemconfig(self.time_text, text=f"Time: 00:00.0")
         # reset hole cooldown
         self.hole_cool_down = 0
         # reset vibro
