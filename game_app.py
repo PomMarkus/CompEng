@@ -266,7 +266,7 @@ class GameApp:
             seconds = self.time_passed % 60
             # seconds = 30.3
             # self.canvas.itemconfig(self.time_text, text=f"Time: {minutes:02}:{seconds:04.1f}")
-            self.canvas.itemconfig(self.time_text, text="{minutes}, {seconds}".format(minutes, seconds))
+            self.canvas.itemconfig(self.time_text, text=str(self.time_passed))
 
         self.vibro_motor.update() # Update vibration motor
 
