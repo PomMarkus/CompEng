@@ -260,7 +260,7 @@ class GameApp:
         self.window.after(self.config.time_step_size, self._game_loop)
 
         # Update time passed text only in offline mode
-        if not self.config.online_mode:
+        if not self.config.online_mode and not self.config.control_mode == "mpu6050":
             self.time_passed = self.get_elapsed_time()
             minutes = int(self.time_passed) // 60
             seconds = int(self.time_passed) % 60
@@ -371,7 +371,7 @@ class GameApp:
         )
         # reset time text
         if not self.config.online_mode:
-            self.canvas.itemconfig(self.time_text, text=f"Time: 00:00.0")
+            self.canvas.itemconfig(self.time_text, text=f"Time: 00:00")
         # reset hole cooldown
         self.hole_cool_down = 0
         # reset vibro
