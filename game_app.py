@@ -214,7 +214,7 @@ class GameApp:
             )
         
         # Status text for time passed (Bottom center) - only visible in offline mode
-        if not self.config.online_mode:
+        if not self.config.online_mode and not self.config.control_mode == "mpu6050":
             self.time_text = self.canvas.create_text(
                 400,
                 460,
@@ -260,13 +260,14 @@ class GameApp:
         self.window.after(self.config.time_step_size, self._game_loop)
 
         # Update time passed text only in offline mode
-        if not self.config.online_mode and not self.config.control_mode == "mpu6050":
+        if not self.config.online_mode:
             self.time_passed = self.get_elapsed_time()
-            minutes = int(self.time_passed) // 60
-            seconds = int(self.time_passed) % 60
-            if seconds != self.last_seconds:
-                self.last_seconds = seconds
-                self.canvas.itemconfig(self.time_text, text=f"Time: {minutes:02}:{seconds:02}")
+            if not self.config.control_mode == "mpu6050":
+                minutes = int(self.time_passed) // 60
+                seconds = int(self.time_passed) % 60
+                if seconds != self.last_seconds:
+                    self.last_seconds = seconds
+                    self.canvas.itemconfig(self.time_text, text=f"Time: {minutes:02}:{seconds:02}")
 
         self.vibro_motor.update() # Update vibration motor
 
@@ -370,7 +371,7 @@ class GameApp:
             text=f"Caught by {self.fell_into_holes} hole{'s' if self.fell_into_holes != 1 else ''}"
         )
         # reset time text
-        if not self.config.online_mode:
+        if not self.config.online_mode and not self.config.control_mode == "mpu6050":
             self.canvas.itemconfig(self.time_text, text=f"Time: 00:00")
         # reset hole cooldown
         self.hole_cool_down = 0
@@ -578,7 +579,7 @@ class GameApp:
             self.overlay.label.pack(pady=75)
         else:
             self.overlay.label.pack(pady=50)
-            minutes = int(self.time_passed // 60)
+            minutes = int(self.time_passed) // 60
             seconds = self.time_passed % 60
             info_label = tk.Label(
                 self.overlay.frame,
