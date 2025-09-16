@@ -261,8 +261,10 @@ class GameApp:
         # Update time passed text only in offline mode
         if not self.config.online_mode:
             self.time_passed = self.get_elapsed_time()
-            minutes = int(self.time_passed // 60)
-            seconds = self.time_passed % 60
+            # minutes = int(self.time_passed // 60)
+            minutes = 20
+            # seconds = self.time_passed % 60
+            seconds = 30.3
             self.canvas.itemconfig(self.time_text, text=f"Time: {minutes:02}:{seconds:04.1f}")
 
         self.vibro_motor.update() # Update vibration motor
