@@ -94,6 +94,7 @@ class GameApp:
         self.hole_cool_down = 0
         if not self.config.online_mode:
             self.start_time = 0
+            self.last_seconds = 0
             self.time_passed = 0
 
         self.overlay = Overlay(self.canvas) # Initialize overlay instance
@@ -217,7 +218,7 @@ class GameApp:
             self.time_text = self.canvas.create_text(
                 400,
                 460,
-                text=f"Time: 00:00.0",
+                text=f"Time: 00:00",
                 font=("Arial", 10, "bold"),
                 fill="white",
                 anchor="n"
@@ -261,12 +262,11 @@ class GameApp:
         # Update time passed text only in offline mode
         if not self.config.online_mode:
             self.time_passed = self.get_elapsed_time()
-            minutes = int(self.time_passed // 60)
-            # minutes = 20
-            seconds = self.time_passed % 60
-            # seconds = 30.3
-            # self.canvas.itemconfig(self.time_text, text=f"Time: {minutes:02}:{seconds:04.1f}")
-            self.canvas.itemconfig(self.time_text, text=str(self.time_passed))
+            minutes = int(self.time_passed) // 60
+            seconds = int(self.time_passed) % 60
+            if seconds != self.last_seconds:
+                self.last_seconds = seconds
+                self.canvas.itemconfig(self.time_text, text=f"Time: {minutes:02}:{seconds:02}")
 
         self.vibro_motor.update() # Update vibration motor
 
