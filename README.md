@@ -8,12 +8,10 @@ The objective of the game is to guide the ball from the start position to four c
 
 ## The hardware
 
-- Raspberry Pi 3B+
-- 4.3" 800x480 px Waveshare Touchscreen
-- Case
-- MPU6050 Gyro Sensor
-- Vibration Motor
-- Fan
+- <a href = "https://www.amazon.de/dp/B07BFH96M3?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1"> Raspberry Pi 3B+ </a>
+- <a href = "https://www.amazon.de/dp/B09B29T8YF?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1"> 4.3" 800x480 px Waveshare Touchscreen with Case and Fan </a>
+- <a href = "https://www.amazon.de/dp/B07BVXN2GP?ref=ppx_yo2ov_dt_b_fed_asin_title"> MPU6050 Gyro Sensor </a>
+- <a href = "https://at.rs-online.com/web/p/entwicklungstools-fur-energie-motor-und-robotik/1845122?gb=s" > Vibration Motor </a>
 - PCB with components and wires
 
 ### Cables and connections
@@ -22,16 +20,29 @@ The following image visualizes the hardware setup with all its components. The i
 
 <img src="documentation/hardwareaufbau_Steckplatine.svg" alt="hardware setup" width="500"/>
 
-The following schematic shows the circuit and the values of the components in detail.    
+The following schematic and layout show the transistor circuit with the values of the components in detail.   
 
 ### Schematic
+
+$V_{in1}$ for the Vibration motor control is connected to GPIO 14 and $V_{in2}$ for the fan control is connected to GPIO 15. $V_{CC}$ is connected to the 5V pin of the Raspberry Pi, while $GND$ is connected to a GND pin. The flyback diods $D_1$ and $D_2$ are 1N4007 diods. The capacitance of the Capacitors sum up to $440 \mu F$ (two 220 $\mu F$ Capacitors were used, because of availability). The resistors have a resistance of $220 \Omega$ to ensure that the Transisor works as a switch/ in saturation mode. The transistors are BC547B NPN transistors. The Fan is a 5V fan, while the vibration motor is a 3V motor. Therefore the vibration motor needs a resistor of $34 \Omega$ in series to limit the current to $~80 mA$.
 
 <img src="documentation/Schematic.svg" alt="schematic" width="600"/>
 
 ### PCB layout
 
+The double layer PCB shows the placement of the components and the connections on the top and bottom layer. The dimensions of the PCB are $2 cm$ x $2 cm$.
+On the left side the connections to the Raspberry Pi and the motors are located.
+
 <img src="documentation/layout.png" alt="pcb layout" width="600"/>
 
+### Rapsberry Pi configuration
+The Raspberry Pi was set up with the version 12 (Bookworm) of Raspberry Pi OS Lite (32 bit). To enable the DSI display the dtoverlay for the display driver has to be changed from the default "vc4-kms-v3d" to "vc4-fkms-v3d". This can be done by editing the file /boot/firmware/config.txt. Adding "nocomposite" ensures smoother graphics performance. The following line has to be added or changed in the config.txt file:
+
+```
+dtoverlay=vc4-fkms-v3d, nocomposite
+```
+
+The cooling fan gets controlled via a seperated programm (adaptive_cooling.py) added to the autostart. When the CPU temperature exceeds 58 °C the fan turns on with 30% and increases its speed with increasing temperature up to 100% at 100° C. 
 
 ## Map, ball movement and collision concept
 
@@ -87,6 +98,7 @@ The following image illustrates this process: The vector $\vec{t_1}$ represents 
 
 
 The calculation of the new trajectory is done with vector algebra: 
+
 The projection of the incoming trajectory $\vec{t_1}$ on the normal vector $\vec{n}$ is calculated with the dot product:
 
 $$\vec{v_p} = \frac{\vec{t_1} \cdot \vec{n}}{|\vec{n}|^2} \cdot \vec{n}$$
