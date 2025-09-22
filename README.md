@@ -83,7 +83,9 @@ The following figure shows the normal vectors in the wall periphery - the walls 
 Since the game is designed to update the screen with $50$ Hz, the time between two frames is $20$ ms. Therefore in each frame the ball travels a certain distance based on its velocity ($s=v\cdot dt$ with $dt = 20$ ms). If the velocity is high, the ball could travel several pixels in one frame and therefore end up inside forbidden areas. To prevent this, the trajectory of the ball is divided into smaller steps of $ds = 0.1$ px length and at each step the current pixel type is checked.
 The following image illustrates this process: The vector $\vec{t_1}$ represents the initial trajectory of the ball. The green dots represent the positions at which the pixel type is checked - they are separated by the step size $ds$. At the position of the red dot the trajectory enters a pixel of type 1 (wall periphery) - starting from the last valid position a new trajectory $\vec{t_2}$ is calculated based on the normal vector $\vec{n}$ stored at the position of the collision. Therefore the direction of the trajectory is mirrored at the normal vector and the length is set to the remaining distance to travel reduced by a damping factor (0.8). The new trajectory is then again divided into steps tested for collisions. On the screen the ball is only drawn on the final position of the trajectory.
 
-<img src="documentation/collision.png" alt="collision" width="600"/>
+<img src="documentation/collision.svg" alt="collision" width="600"/>
 
 
 The calculation of the new trajectory is done with vector algebra: 
+
+<img src="documentation/mirroring.svg" alt="mirroring" width="400"/>
