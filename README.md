@@ -18,7 +18,7 @@ The objective of the game is to guide the ball from the start position to four c
 
 The following image visualizes the hardware setup with all its components. The image shows a Raspberry Pi 3, but the project was actually built with a Raspberry Pi 3B+. However, it should also work with a Raspberry Pi 3. The DSI display is connected to the DSI port located on the left side. The MPU6050 gyro sensor is connected via I2C to the SDA and SCL pins of the Raspberry Pi. The vibration motor and the fan require more power than the GPIO pins can provide, therefore they are powered through a transistor circuit connected to the 5V and GND pins of the Raspberry Pi. Resistors connecting the base of the transistors to the GPIO pins are used to control the motors. To smooth out the fan rotation capacitors are connected in parallel to the fan. Diods are used to protect the circuit from voltage spikes when turning off the motors. 
 
-<img src="documentation/hardwareaufbau_Steckplatine.svg" alt="hardware setup" width="500"/>
+<img src="documentation/hardwareaufbau_Steckplatine.png" alt="hardware setup" width="500"/>
 
 The following schematic and layout show the transistor circuit with the values of the components in detail.   
 
@@ -113,4 +113,9 @@ $$\vec{t_2} = -\vec{v_p} - \vec{v_\perp} = -2 \cdot \vec{v_p} + \vec{t_1}$$
 
 <img src="documentation/mirroring.svg" alt="mirroring" width="400"/>
 
-For some special cases where the projection vector points in the same direction as the normal vector (at )
+For some special cases where the projection vector points in the same direction as the normal vector (at the "corner circles"), the above calculation would lead to the new trajectory pointing into the wall. To prevent this, in these cases the new ball is simply pushed one stepsize away from the wall along the normal vector and keeps moving in the same direction as before.
+
+
+## Software structure
+
+The game is implemented in Python, based on a number of classes 
