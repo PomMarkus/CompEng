@@ -35,14 +35,52 @@ On the left side the connections to the Raspberry Pi and the motors are located.
 
 <img src="documentation/layout.png" alt="pcb layout" width="600"/>
 
-### Rapsberry Pi configuration
+# Rapsberry Pi configuration
 The Raspberry Pi was set up with the version 12 (Bookworm) of Raspberry Pi OS Lite (32 bit). To enable the DSI display the dtoverlay for the display driver has to be changed from the default "vc4-kms-v3d" to "vc4-fkms-v3d". This can be done by editing the file /boot/firmware/config.txt. Adding "nocomposite" ensures smoother graphics performance. The following line has to be added or changed in the config.txt file:
 
 ```
 dtoverlay=vc4-fkms-v3d, nocomposite
 ```
 
+A virtual environment for Python 3 is created to install the required libraries. The libraries used in the project are:
+- numpy
+- mpu6050-raspberrypi
+- tkinter
+- sys
+- threading
+- time
+- datetime
+- RPi.GPIO
+- json
+- re
+- abc
+- paho-mqtt
+
+A shell script is used to start the game in the virtual environment. 
+``` 
+#!/bin/bash
+
+# go to venv path
+cd /home/gyropi/Documents/gyropython/
+
+# activate venv
+source bin/activate
+
+# go to repository
+cd /home/gyropi/Documents/gyropython/CompEng/
+
+# start game
+#python3 collision_v1.py
+python3 main.py
+```
+ 
+# Cooling programm
+
 The cooling fan gets controlled via a seperated programm (adaptive_cooling.py) added to the autostart. When the CPU temperature exceeds 58 °C the fan turns on with 30% and increases its speed with increasing temperature up to 100% at 100° C. 
+
+# MPU6050 gyro sensor
+
+The sensor is connected via I2C to the Raspberry Pi. To enable I2C the raspi-config tool can be used. The sensor is read out with the help of the mpu6050-raspberrypi library. With the use of that library the acceleration in x and y direction can be read out directly. The z acceleration is not used in the game. 
 
 ## Map, ball movement and collision concept
 
