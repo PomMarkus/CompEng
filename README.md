@@ -88,10 +88,15 @@ The following image illustrates this process: The vector $\vec{t_1}$ represents 
 
 The calculation of the new trajectory is done with vector algebra: 
 The projection of the incoming trajectory $\vec{t_1}$ on the normal vector $\vec{n}$ is calculated with the dot product:
+
 $$\vec{v_p} = \frac{\vec{t_1} \cdot \vec{n}}{|\vec{n}|^2} \cdot \vec{n}$$
+
 The projection vector can then be used to calculate the component of the trajectory perpendicular to the normal vector:
+
 $$\vec{v_\perp} = \vec{v_p} - \vec{t_1}$$
+
 The new (undamped) trajectory is then obtained by calculating $-\vec{v_p} - \vec{v_\perp}$:
+
 $$\vec{t_2} = -\vec{v_p} - \vec{v_\perp} = -2 \cdot \vec{v_p} + \vec{t_1}$$
 
 <img src="documentation/mirroring.svg" alt="mirroring" width="400"/>
