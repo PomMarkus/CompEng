@@ -8,12 +8,10 @@ The objective of the game is to guide the ball from the start position to four c
 
 ## The hardware
 
-- Raspberry Pi 3B+
-- 4.3" 800x480 px Waveshare Touchscreen
-- Case
-- MPU6050 Gyro Sensor
-- Vibration Motor
-- Fan
+- <a href = "https://www.amazon.de/dp/B07BFH96M3?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1"> Raspberry Pi 3B+ </a>
+- <a href = "https://www.amazon.de/dp/B09B29T8YF?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1"> 4.3" 800x480 px Waveshare Touchscreen with Case and Fan </a>
+- <a href = "https://www.amazon.de/dp/B07BVXN2GP?ref=ppx_yo2ov_dt_b_fed_asin_title"> MPU6050 Gyro Sensor </a>
+- <a href = "https://at.rs-online.com/web/p/entwicklungstools-fur-energie-motor-und-robotik/1845122?gb=s" > Vibration Motor </a>
 - PCB with components and wires
 
 ### Cables and connections
@@ -36,6 +34,12 @@ The double layer PCB shows the placement of the components and the connections o
 On the left side the connections to the Raspberry Pi and the motors are located.
 
 <img src="documentation/layout.png" alt="pcb layout" width="600"/>
+
+### Rapsberry Pi configuration
+The Raspberry Pi was set up with the version 12 (Bookworm) of Raspberry Pi OS Lite (32 bit). To enable the DSI display the dtoverlay for the display driver has to be changed from the default "vc4-kms-v3d" to "vc4-fkms-v3d". This can be done by editing the file /boot/firmware/config.txt. Adding "nocomposite" ensures smoother graphics performance. The following line has to be added or changed in the config.txt file:
+```
+dtoverlay=vc4-fkms-v3d, nocomposite
+```
 
 
 ## Map, ball movement and collision concept
