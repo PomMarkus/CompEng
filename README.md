@@ -37,10 +37,12 @@ On the left side the connections to the Raspberry Pi and the motors are located.
 
 ### Rapsberry Pi configuration
 The Raspberry Pi was set up with the version 12 (Bookworm) of Raspberry Pi OS Lite (32 bit). To enable the DSI display the dtoverlay for the display driver has to be changed from the default "vc4-kms-v3d" to "vc4-fkms-v3d". This can be done by editing the file /boot/firmware/config.txt. Adding "nocomposite" ensures smoother graphics performance. The following line has to be added or changed in the config.txt file:
+
 ```
 dtoverlay=vc4-fkms-v3d, nocomposite
 ```
 
+The cooling fan gets controlled via a seperated programm (adaptive_cooling.py) added to the autostart. When the CPU temperature exceeds 58 °C the fan turns on with 30% and increases its speed with increasing temperature up to 100% at 100° C. 
 
 ## Map, ball movement and collision concept
 
