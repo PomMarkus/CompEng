@@ -2,13 +2,13 @@ import tkinter as tk
 import numpy as np
 from game_config import GameConfig
 from game_map import GameMap
-from game_map import WALL, FORBIDDEN, VALID, HOLE_PERIPHERY, HOLE_CENTER, CHECKPOINT, PXTYPE
+from game_map import WALL, WALL_PERIPHERY, VALID, HOLE_AREA, HOLE_CENTER, CHECKPOINT, PXTYPE
 from vibro_motor import VibroMotor
 from checkpoint import Checkpoint
 
 class Ball:
     """
-    Represents a ball object in a 2D game environment, handling its physics, collisions, and interactions with the game map.
+    Represents the ball object in the 2D game environment, handling its physics, collisions, and interactions with the game map.
     Attributes:
         canvas (tk.Canvas): The canvas on which the ball is drawn.
         config (GameConfig): Configuration parameters for the game and ball physics.
@@ -84,7 +84,7 @@ class Ball:
             val_info = self.gamemap.get_val_info(int(temp_pos[0]), int(temp_pos[1])) # Get information about the pixel at the new position (if pixel is valid, hole, checkpoint, obstacle)
             px_type = val_info[PXTYPE]
 
-            if px_type > VALID: # Collision with wall or forbidden area
+            if px_type > VALID: # Collision with wall or WALL_PERIPHERY area
                 vec_norm = val_info[2:0:-1] # Normal vector stored for this pixel (reversed order to get [nx, ny])
                 normal_vectors.add(tuple(vec_norm))
                 pos_dot_product = np.dot(vec_norm, Dpos) # Projection of current trajectory on the normal vector - used to determine consequent direction of movement
@@ -136,7 +136,7 @@ class Ball:
 
         # Mechanism to pull the ball into holes
         val_info = self.gamemap.get_val_info(int(self.position[0]), int(self.position[1]))
-        if (val_info[0] == HOLE_PERIPHERY): 
+        if (val_info[0] == HOLE_AREA): 
             vec_norm = val_info[2:0:-1] # Normal vector stored for this pixel (reversed order to get [nx, ny])
             vec_tang = np.array([vec_norm[1], -vec_norm[0]])
             vec_proj_vel_tang = np.dot(vec_tang, self.velocity) / np.dot(vec_tang, vec_tang) * vec_tang # Projection of the velocity onto the tangential vector

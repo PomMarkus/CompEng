@@ -4,10 +4,10 @@ from game_config import GameConfig
 import re
 
 # Value definitions for map pixel types
-WALL = 2           # Wall
-FORBIDDEN = 1      # Forbidden position around wall
-VALID = 0           # Valid position
-HOLE_PERIPHERY = -1  # Hole periphery
+WALL = 2             # Wall
+WALL_PERIPHERY = 1   # forbidden position around wall
+VALID = 0            # Valid position
+HOLE_AREA = -1  # Hole periphery
 HOLE_CENTER = -2     # Hole center
 CHECKPOINT = -3      # Checkpoint
 
@@ -93,7 +93,7 @@ class GameMap:
                 
     def _generate_val_data(self):
         """
-        Generates the val_data array, marking walls, holes, forbidden zones, and checkpoints.
+        Generates the val_data array, marking walls, holes, WALL_PERIPHERY zones, and checkpoints.
 
         This method sets up the collision and logic map for the game, including normal vectors
         for rebouncing and special areas for holes and checkpoints.
@@ -102,7 +102,7 @@ class GameMap:
         circle_hole = np.zeros((self.config.hole_radius * 2, self.config.hole_radius * 2))
         Y, X = np.ogrid[:self.config.hole_radius * 2, :self.config.hole_radius * 2] # create two arrays with y and x coordinates
         mask_hole = ((X - self.config.hole_radius + 0.5) ** 2) + ((Y - self.config.hole_radius + 0.5) ** 2) <= self.config.hole_radius ** 2 # mask for all points within the circle
-        circle_hole[mask_hole] = HOLE_PERIPHERY # pixel type in periphery of holes is set to HOLE_PERIPHERY
+        circle_hole[mask_hole] = HOLE_AREA # pixel type in periphery of holes is set to HOLE_AREA
 
         # generating a 2D array e.g. (-2, -1, 1, 2) for x and y
         idx = np.indices((self.config.hole_radius * 2, self.config.hole_radius * 2)) - self.config.hole_radius
@@ -148,7 +148,7 @@ class GameMap:
                 checkpoint_counter += 1
 
                 
-        # Fill area of shifted rectangles with FORBIDDEN and add the normalvector for the rebouncing calculation
+        # Fill area of shifted rectangles with WALL_PERIPHERY and add the normalvector for the rebouncing calculation
         for obj in self.map_objects:
 
             if obj[0] == 'w':
@@ -158,25 +158,25 @@ class GameMap:
                 # Create rectangle above - normalvector points upwards
                 subdata = self.val_data[y1- self.config.ball_radius:y1, x1:x2]
                 subdata[subdata[:,:, PXTYPE] != WALL] += np.array([0, -1, 0, 0]) # add the normalvector
-                subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = FORBIDDEN # Set pixel type to FORBIDDEN - done separately to avoid summing up pixel types
+                subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = WALL_PERIPHERY # Set pixel type to WALL_PERIPHERY - done separately to avoid summing up pixel types
                 self.val_data[y1- self.config.ball_radius:y1, x1:x2] = subdata
 
                 # Create rectangle below - normalvector points downwards
                 subdata = self.val_data[y2:y2+ self.config.ball_radius, x1:x2]
                 subdata[subdata[:,:, PXTYPE] != WALL] += np.array([0, 1, 0, 0]) # add the normalvector
-                subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = FORBIDDEN # Set pixel type to FORBIDDEN - done separately to avoid summing up pixel types
+                subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = WALL_PERIPHERY # Set pixel type to WALL_PERIPHERY - done separately to avoid summing up pixel types
                 self.val_data[y2:y2+ self.config.ball_radius, x1:x2] = subdata
 
                 # Create rectangle left - normalvector points left
                 subdata = self.val_data[y1:y2, x1- self.config.ball_radius:x1]
                 subdata[subdata[:,:, PXTYPE] != WALL] += np.array([0, 0, -1, 0]) # add the normalvector
-                subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = FORBIDDEN # Set pixel type to FORBIDDEN - done separately to avoid summing up pixel types
+                subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = WALL_PERIPHERY # Set pixel type to WALL_PERIPHERY - done separately to avoid summing up pixel types
                 self.val_data[y1:y2, x1- self.config.ball_radius:x1] = subdata
 
                 # Create rectangle right - normalvector points right
                 subdata = self.val_data[y1:y2, x2:x2+ self.config.ball_radius]
                 subdata[subdata[:,:, PXTYPE] != WALL] += np.array([0, 0, 1, 0]) # add the normalvector
-                subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = FORBIDDEN # Set pixel type to FORBIDDEN - done separately to avoid summing up pixel types
+                subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = WALL_PERIPHERY # Set pixel type to WALL_PERIPHERY - done separately to avoid summing up pixel types
                 self.val_data[y1:y2, x2:x2+ self.config.ball_radius] = subdata
 
         
@@ -184,7 +184,7 @@ class GameMap:
         circle_wall = np.zeros((2 * self.config.ball_radius + 1, 2 * self.config.ball_radius + 1))
         Y, X = np.ogrid[:2 * self.config.ball_radius + 1, :2 * self.config.ball_radius + 1]
         mask_corner = ((X - self.config.ball_radius) ** 2) + ((Y - self.config.ball_radius) ** 2) <= self.config.ball_radius ** 2
-        circle_wall[mask_corner] = FORBIDDEN # corner surroundings of walls are also marked as such
+        circle_wall[mask_corner] = WALL_PERIPHERY # corner surroundings of walls are also marked as such
         idx = np.indices((2 * self.config.ball_radius + 1, 2 * self.config.ball_radius + 1)) # generating a 2D array e.g. (-2, -1, 0, 1, 2) for x and y
         circle_wall = np.stack(
             (
@@ -195,7 +195,7 @@ class GameMap:
             ), 
             axis=-1)
 
-        # Define circular areas at the corners of walls as forbidden zones
+        # Define circular areas at the corners of walls as WALL_PERIPHERY zones
         for obj in self.map_objects:
             if obj[0] == 'w':
                 # Define wall corners
@@ -203,19 +203,19 @@ class GameMap:
 
                 # Create masks for the respective corners and insert circle sector at each corner
                 # Top left corner
-                mask = np.isin(self.val_data[y1- self.config.ball_radius:y1, x1- self.config.ball_radius:x1, PXTYPE], [VALID, HOLE_PERIPHERY])
+                mask = np.isin(self.val_data[y1- self.config.ball_radius:y1, x1- self.config.ball_radius:x1, PXTYPE], [VALID, HOLE_AREA])
                 self.val_data[y1-self.config.ball_radius:y1, x1-self.config.ball_radius:x1][mask] = circle_wall[: self.config.ball_radius, : self.config.ball_radius][mask]
                 
                 # Top right corner
-                mask = np.isin(self.val_data[y1-self.config.ball_radius:y1, x2:x2+self.config.ball_radius, PXTYPE], [VALID, HOLE_PERIPHERY])
+                mask = np.isin(self.val_data[y1-self.config.ball_radius:y1, x2:x2+self.config.ball_radius, PXTYPE], [VALID, HOLE_AREA])
                 self.val_data[y1-self.config.ball_radius:y1, x2:x2+self.config.ball_radius][mask] = circle_wall[: self.config.ball_radius, self.config.ball_radius + 1:][mask]
                 
                 # Bottom left corner
-                mask = np.isin(self.val_data[y2:y2+ self.config.ball_radius, x1- self.config.ball_radius:x1, PXTYPE], [VALID, HOLE_PERIPHERY])
+                mask = np.isin(self.val_data[y2:y2+ self.config.ball_radius, x1- self.config.ball_radius:x1, PXTYPE], [VALID, HOLE_AREA])
                 self.val_data[y2:y2+self.config.ball_radius, x1-self.config.ball_radius:x1][mask] = circle_wall[ self.config.ball_radius + 1:, : self.config.ball_radius][mask]
                 
                 # Bottom right corner
-                mask = np.isin(self.val_data[y2:y2+ self.config.ball_radius, x2:x2+ self.config.ball_radius, PXTYPE], [VALID, HOLE_PERIPHERY])
+                mask = np.isin(self.val_data[y2:y2+ self.config.ball_radius, x2:x2+ self.config.ball_radius, PXTYPE], [VALID, HOLE_AREA])
                 self.val_data[y2:y2+ self.config.ball_radius, x2:x2+ self.config.ball_radius][mask] = circle_wall[ self.config.ball_radius + 1:, self.config.ball_radius + 1:][mask]
 
     def draw_map(self, canvas: tk.Canvas):

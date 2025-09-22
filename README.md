@@ -118,4 +118,14 @@ For some special cases where the projection vector points in the same direction 
 
 ## Software structure
 
-The game is implemented in Python, based on a number of classes 
+The game is implemented in Python, based on a number of classes:
+- GameApp: Main class handling the game loop, screen updates, user input and feedback
+- GameConfig: Class storing configuration parameters for the game and ball physics
+- GameMap: Class handling the map loading, representation and drawing
+- Ball: Class representing the ball object, including its physics and interactions
+- Checkpoint: Class representing checkpoints in the game
+- InputControl: Abstract parent class for input handling
+- VibroMotor: Class handling the vibration feedback for the user
+- MQTTClient: Class handling the MQTT communication with the central station (usage optional)
+- Overlay: Class storing the overlay objects for the game
+
