@@ -22,13 +22,18 @@ The following image visualizes the hardware setup with all its components. The i
 
 <img src="documentation/hardwareaufbau_Steckplatine.svg" alt="hardware setup" width="500"/>
 
-The following schematic shows the circuit and the values of the components in detail.    
+The following schematic and layout show the transistor circuit with the values of the components in detail.   
 
 ### Schematic
+
+$V_{in1}$ for the Vibration motor control is connected to GPIO 14 and $V_{in2}$ for the fan control is connected to GPIO 15. $V_{CC}$ is connected to the 5V pin of the Raspberry Pi, while $GND$ is connected to a GND pin. The flyback diods $D_1$ and $D_2$ are 1N4007 diods. The capacitance of the Capacitors sum up to $440 \mu F$ (two 220 $\mu F$ Capacitors were used, because of availability). The resistors have a resistance of $220 \Omega$ to ensure that the Transisor works as a switch/ in saturation mode. The transistors are BC547B NPN transistors. The Fan is a 5V fan, while the vibration motor is a 3V motor. Therefore the vibration motor needs a resistor of $34 \Omega$ in series to limit the current to $~80 mA$.
 
 <img src="documentation/Schematic.svg" alt="schematic" width="600"/>
 
 ### PCB layout
+
+The double layer PCB shows the placement of the components and the connections on the top and bottom layer. The dimensions of the PCB are $2 cm$ x $2 cm$.
+On the left side the connections to the Raspberry Pi and the motors are located.
 
 <img src="documentation/layout.png" alt="pcb layout" width="600"/>
 
@@ -87,3 +92,4 @@ The following image illustrates this process: The vector $\vec{t_1}$ represents 
 
 
 The calculation of the new trajectory is done with vector algebra: 
+
