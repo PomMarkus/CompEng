@@ -35,7 +35,8 @@ On the left side the connections to the Raspberry Pi and the motors are located.
 
 <img src="documentation/layout.png" alt="pcb layout" width="600"/>
 
-### Rapsberry Pi configuration
+
+### Raspberry Pi Setup configuration
 
 The Raspberry Pi was set up with the version 12 (Bookworm) of Raspberry Pi OS Lite (32 bit). To enable the DSI display the dtoverlay for the display driver has to be changed from the default "vc4-kms-v3d" to "vc4-fkms-v3d". This can be done by editing the file /boot/firmware/config.txt. Adding "nocomposite" ensures smoother graphics performance. The following line has to be added or changed in the config.txt file:
 
@@ -161,6 +162,8 @@ For some special cases where the projection vector points in the same direction 
 
 ## Software structure
 
+
+### Classes
 The game is implemented in Python, based on a number of classes:
 - GameApp: Main class handling the game loop, screen updates, user input and feedback
 - GameConfig: Class storing configuration parameters for the game and ball physics
@@ -172,3 +175,59 @@ The game is implemented in Python, based on a number of classes:
 - MQTTClient: Class handling the MQTT communication with the central station (usage optional)
 - Overlay: Class storing the overlay objects for the game
 
+Further details about the classes and their functions can be found in the code.
+
+### Configuration
+
+The game config class reads the data stored in the config.json file. The following parameters can be configured:
+
+- "control": "mpu6050" or "keyboard" - defines if the game is controlled via the gyro sensor or keyboard input (for testing on pc without sensor)
+- "online_mode": true/false - if true the game tries to connects to the MQTT broker (if it fails it is set to false)
+- "mpl_debug": true/false - if true matplotlib is used to plot the ball trajectory for debugging purposes (after the game ends - in the main.py file)
+- "checkpoints": string with the four number/letter pairs revealed at the checkpoints in a changed order ("1H\t9O\t7L\t0E" -> HOLE with 1970 as code)
+- "time_step_size": int - time step size in ms for the game loop (20 ms -> 50 Hz)
+- "position_step_size": float - step size in px for checking the ball trajectory for collisions (0.1 px currently)
+- "acceleration_factor": float - factor to scale the acceleration of the ball based on the gyro sensor input (100 currently)
+- "damping_factor": float - factor to reduce the ball velocity after a collision: $0 \leq x \leq 1$ (0.8 currently)
+- "ball_radius": int - radius of the ball in px (10 currently)
+- "hole_radius": int - radius of the holes in px (12 currently)
+- "map_file_name": string - name of the map file (map_v1.txt currently)
+- "broker": string - address of the MQTT broker
+- "port": int - port of the MQTT broker
+- "topic": string - topic for the MQTT communication ("pr_embedded/puzzle_tilt_maze" currently)
+- "username": string - username for the MQTT broker
+- "password": string - password for the MQTT broker
+- "screen_width": int - width of the screen in px (800 - do not change for the 4.3" display)
+- "screen_height": int - height of the screen in px (480 - do not change for the 4.3" display)
+- "fan_gpio": int - GPIO pin number for the fan control (15 currently)
+- "vibration_gpio": int - GPIO pin number for the vibration motor control (14 currently)
+
+## How to run the game
+
+### Starting the program
+When the program is started in online mode, it tries to connect to the MQTT broker; meanwhile the player sees a welcome screen with a disabled button. If the connection is successful and the broker sends a "initialize" message on the subscribed topic, the program publishes a "initialize_ack" message and the button is enabled and the player can start the game by pressing it. If the connection to the broker fails, the online mode is disabled and the player gets a error message, but can still start the game in offline mode. If the online mode is disabled, the player can immediately start the game by pressing the button.
+
+### Playing the game
+When the game is started, the ball appears at the start position and the player can navigate it through the maze by tilting the raspberry pi with the gyroscope sensor or pressing the arrow keys - depending on the "control" configuration. When the online mode is disabled, a timer starts to track the time taken to finish the game. For performance reasons the timer is not shown during the game if it is controlled by the mpu6050.
+
+### Gameplay
+The objective is to reach all four checkpoints, which reveal a number/letter pair each and sets the startpoint there. On the way there the ball can fall into holes which resets its position to the start or last checkpoint. Further the number of times the ball falls into holes is counted to deduct points at the end.
+When the ball hits a wall, the vibration motor gives a short haptic feedback to the player. If the ball falls into a hole, it is stuck there for half a second before being reset to the startpoint or last checkpoint. During this time the vibration motor gives a longer haptic feedback.
+If the game is not played on the raspberry pi, instead of the haptic feedback a red dot flashes on the top left of the screen instead of the vibration.
+
+### Finishing the game
+When all checkpoints are reached, the game is finished and a new overlay opens the player has to enter a four digit code. This code can be deduced from the number/letter pairs revealed at the checkpoints. Threfore the players has to arrange the letters to form a word and combine the numbers in the same order to get the code.
+As soon as the code is entered, the game shows the final overlay.
+- If the game is finished in online mode, the program publishes the number of points lost as well as "finished" to the broker. These point are calculated based on the number of times the ball fell into a hole (5 points lost each, 45 max).
+- If the online mode is disabled, the final overlay shows the time taken to finish the game as well as the number of times the ball fell into holes.
+
+### Further features
+
+#### Pausing the game
+On the top left of the screen there is a button to pause the game which also pauses the timer.
+
+#### Toggle code overlay
+The code overlay can also be opened by pressing the coresponding button located on the bottom left of the screen if the player wants to enter the code before reaching all checkpoints (this could be the case if hints bought in the online mode reveal the complete code). This also pauses the game. Pressing the button again closes the overlay and resumes the game.
+
+#### Restarting the game
+If the online mode is disabled, the game can be restarted by pressing the restart button on the bottom right of the screen. In online mode the game can only be restarted if the broker sends "initialize" again.
