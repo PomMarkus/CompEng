@@ -7,3 +7,6 @@ config.json
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/settings.json
+collision_v1.py
+rough_template_2.py
+source_classes.py
