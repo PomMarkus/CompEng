@@ -35,7 +35,7 @@ On the left side the connections to the Raspberry Pi and the motors are located.
 
 <img src="documentation/layout.png" alt="pcb layout" width="600"/>
 
-# Rapsberry Pi configuration
+### Rapsberry Pi configuration
 The Raspberry Pi was set up with the version 12 (Bookworm) of Raspberry Pi OS Lite (32 bit). To enable the DSI display the dtoverlay for the display driver has to be changed from the default "vc4-kms-v3d" to "vc4-fkms-v3d". This can be done by editing the file /boot/firmware/config.txt. Adding "nocomposite" ensures smoother graphics performance. The following line has to be added or changed in the config.txt file:
 
 ```
@@ -74,13 +74,16 @@ cd /home/gyropi/Documents/gyropython/CompEng/
 python3 main.py
 ```
  
-# Cooling programm
+### Cooling fan
 
 The cooling fan gets controlled via a seperated programm (adaptive_cooling.py) added to the autostart. When the CPU temperature exceeds 58 °C the fan turns on with 30% and increases its speed with increasing temperature up to 100% at 100° C. 
 
-# MPU6050 gyro sensor
+### MPU6050 gyro sensor
 
 The sensor is connected via I2C to the Raspberry Pi. To enable I2C the raspi-config tool can be used. The sensor is read out with the help of the mpu6050-raspberrypi library. With the use of that library the acceleration in x and y direction can be read out directly. The z acceleration is not used in the game. 
+
+### Vibration motor
+The vibration motor is controlled via a GPIO pin of the Raspberry Pi. The motor turns on when the  Raspberry Pi is booting. During Gameplay the motor vibrates wehn the ball falls into a hole or when the ball hits a wall.
 
 ## Map, ball movement and collision concept
 
