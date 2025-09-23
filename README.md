@@ -118,6 +118,8 @@ For some special cases where the projection vector points in the same direction 
 
 ## Software structure
 
+
+### Classes
 The game is implemented in Python, based on a number of classes:
 - GameApp: Main class handling the game loop, screen updates, user input and feedback
 - GameConfig: Class storing configuration parameters for the game and ball physics
@@ -129,3 +131,6 @@ The game is implemented in Python, based on a number of classes:
 - MQTTClient: Class handling the MQTT communication with the central station (usage optional)
 - Overlay: Class storing the overlay objects for the game
 
+### Configuration
+
+The game config class reads the data stored in the config.json file. This
