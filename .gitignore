@@ -3,6 +3,7 @@ old/*
 add_circle.py
 map_v1 backup walls.dat
 modify_holes.py
+collision_v1.py
 collision_v2.py
 config.json
 .vscode/c_cpp_properties.json
@@ -11,3 +12,15 @@ config.json
 collision_v1.py
 rough_template_2.py
 source_classes.py
+documentation/hole_vectors.pdf
+documentation/hole_pixels.png
+documentation/hole_grafic.xcf
+documentation/corner_vectors.pdf
+documentation/corner_pixels.png
+documentation/corner_grafic.xcf
+documentation/GameMap.xcf
+documentation/hardwareaufbau.fzz
+documentation/layout.pdn
+documentation/pictures.pptx
+documentation/Schaltplan.ipynb
+documentation/val_data_grafic.odg

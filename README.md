@@ -25,7 +25,6 @@ The following schematic and layout show the transistor circuit with the values o
 ### Schematic
 
 $V_{in1}$ for the Vibration motor control is connected to GPIO 14 and $V_{in2}$ for the fan control is connected to GPIO 15. $V_{CC}$ is connected to the 5V pin of the Raspberry Pi, while $GND$ is connected to a GND pin. The flyback diods $D_1$ and $D_2$ are 1N4007 diods. The capacitance of the Capacitors sum up to $440 \mu F$ (two 220 $\mu F$ Capacitors were used, because of availability). The resistors have a resistance of $220 \Omega$ to ensure that the Transisor works as a switch/ in saturation mode. The transistors are BC547B NPN transistors. The Fan is a 5V fan, while the vibration motor is a 3V motor. Therefore the vibration motor needs a resistor of $34 \Omega$ in series to limit the current to $~80 mA$.
-<!-- Explain functionality? -->
 When $V_{in1}$ or $V_{in2}$ is set to HIGH, the corresponding transistor $T_1$ or $T_2$ turns on and connects the motor to ground, allowing current to flow from $V_{CC}$ through the motor to ground, thus powering the motor.
 
 <img src="documentation/Schematic.svg" alt="schematic" width="600"/>
@@ -37,6 +36,19 @@ On the left side the connections to the Raspberry Pi and the motors are located.
 
 <img src="documentation/layout.png" alt="pcb layout" width="600"/>
 
+### Photos of the final setup
+
+<img src="documentation/photo_open_all.jpg" alt="final setup open" width="400"/>
+
+The raspberry pi is mounted in the back of the LCD screen and connected using a DSI cable (orange). The vibration motor and the fan are mounted inside the case.
+
+<img src="documentation/photo_open_zoom.jpg" alt="final setup open zoom" width="400"/>
+
+The soldered PCB and the MPU6050 are mounted onto the raspberry pi with spacers.
+
+<img src="documentation/photo_closed.jpg" alt="final setup closed" width="400"/>
+
+The final setup with the case closed.
 
 ### Raspberry Pi Setup configuration
 
