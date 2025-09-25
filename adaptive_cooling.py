@@ -95,7 +95,7 @@ def tempcheck():
 
 def pwm(pin=PIN):
     global stop
-    global time # high duty cycle in %
+    global time # high duty cycle in % 
     #run=False
     while not stop:
         if time==0:
