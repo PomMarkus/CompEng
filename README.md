@@ -4,7 +4,7 @@
 
 The Tilt Maze Game is inspired by the classic wooden labyrinth game where players navigate a ball through a maze by tilting the board.
 This game uses a Raspberry Pi combinded with a touchscreen and a MPU6050 gyro sensor for tilt detection.
-The objective of the game is to guide the ball from the start position to four checkpoints on the map while avoiding holes that will reset the ball's position. When reached the checkpoints will each reveral a number/letter combination which has to decoded. The resulting code the has to be entered to finish the game.
+The objective of the game is to guide the ball from the start position to four checkpoints on the map while avoiding holes that will reset the ball's position. When reached, the checkpoints will each reveal a number/letter combination which has to be decoded. The resulting code then has to be entered to finish the game.
 
 ## The hardware
 
@@ -16,7 +16,7 @@ The objective of the game is to guide the ball from the start position to four c
 
 ### Cables and connections
 
-The following image visualizes the hardware setup with all its components. The image shows a Raspberry Pi 3, but the project was actually built with a Raspberry Pi 3B+. However, it should also work with a Raspberry Pi 3. The DSI display is connected to the DSI port located on the left side. The MPU6050 gyro sensor is connected via I2C to the SDA and SCL pins of the Raspberry Pi. The vibration motor and the fan require more power than the GPIO pins can provide, therefore they are powered through a transistor circuit connected to the 5V and GND pins of the Raspberry Pi. Resistors connecting the base of the transistors to the GPIO pins are used to control the motors. To smooth out the fan rotation capacitors are connected in parallel to the fan. Diods are used to protect the circuit from voltage spikes when turning off the motors. 
+The following image visualizes the hardware setup with all its components. The image shows a Raspberry Pi 3, but the project was actually built with a Raspberry Pi 3B+. However, it should also work with a Raspberry Pi 3. The DSI display is connected to the DSI port located on the left side. The MPU6050 gyro sensor is connected via I2C to the SDA and SCL pins of the Raspberry Pi. The vibration motor and the fan require more power than the GPIO pins can provide, therefore they are powered through a transistor circuit connected to the 5V and GND pins of the Raspberry Pi. Resistors connecting the base of the transistors to the GPIO pins are used to control the motors. To smooth out the fan rotation, capacitors are connected in parallel to the fan. Diods are used to protect the circuit from voltage spikes when turning off the motors. 
 
 <img src="documentation/hardwareaufbau_Steckplatine.png" alt="hardware setup" width="500"/>
 
@@ -25,12 +25,14 @@ The following schematic and layout show the transistor circuit with the values o
 ### Schematic
 
 $V_{in1}$ for the Vibration motor control is connected to GPIO 14 and $V_{in2}$ for the fan control is connected to GPIO 15. $V_{CC}$ is connected to the 5V pin of the Raspberry Pi, while $GND$ is connected to a GND pin. The flyback diods $D_1$ and $D_2$ are 1N4007 diods. The capacitance of the Capacitors sum up to $440 \mu F$ (two 220 $\mu F$ Capacitors were used, because of availability). The resistors have a resistance of $220 \Omega$ to ensure that the Transisor works as a switch/ in saturation mode. The transistors are BC547B NPN transistors. The Fan is a 5V fan, while the vibration motor is a 3V motor. Therefore the vibration motor needs a resistor of $34 \Omega$ in series to limit the current to $~80 mA$.
+<!-- Explain functionality? -->
 
 <img src="documentation/Schematic.svg" alt="schematic" width="600"/>
 
 ### PCB layout
 
 The double layer PCB shows the placement of the components and the connections on the top and bottom layer. The dimensions of the PCB are $2 cm$ x $2 cm$.
+<!-- whats top, whats bottom? -->
 On the left side the connections to the Raspberry Pi and the motors are located.
 
 <img src="documentation/layout.png" alt="pcb layout" width="600"/>
@@ -86,7 +88,7 @@ The sensor is connected via I2C to the Raspberry Pi. To enable I2C the raspi-con
 
 ### Vibration motor
 
-The vibration motor is controlled via a GPIO pin of the Raspberry Pi. The motor turns on when the  Raspberry Pi is booting. During Gameplay the motor vibrates wehn the ball falls into a hole or when the ball hits a wall.
+The vibration motor is controlled via a GPIO pin of the Raspberry Pi. The motor turns on when the  Raspberry Pi is booting. During Gameplay the motor vibrates when the ball falls into a hole or when the ball hits a wall.
 
 ## Map, ball movement and collision concept
 
@@ -100,13 +102,13 @@ In the map file first the radius of holes and checkpoints is defined with the ke
 
 In the program the map is represented by a 3D array storing a certain set of information for each pixel of the map; the first two indices of the array represent the x and y coordinates of the pixel, while the third index selects the information stored for that pixel. In the following "index" refers to the third index of the array, while the first two indices are referred to as "coordinates". In the code this array is called 'val_data'.
 
-Index 0 defines the type of the pixel and with this if it represents a valid position for the center of the ball (will be reffered to as 'ball' in this section). The following types are defined: 
+Index 0 defines the type of the pixel and with this if it represents a valid position for the center of the ball (which will be reffered to as 'ball' in this section). The following types are defined: 
 
 - 2: Wall; obviously the ball cannot move into walls
 - 1: Wall periphery; the ball cannot move into these pixels
-- 0: Valid position; the ball can move into these pixels
+- 0: Valid; the ball can move into these pixels
 - -1: Hole area; the ball can move there but is drawn to the center of the hole
-- -2: Hole center; the ball can move there but falls into the hole
+- -2: Hole center; the ball can move there but "falls" into the hole
 - -3: Checkpoint; the ball can move there and reveals the number/letter pair of the checkpoint
 
 In order to implement the collision logic it is required to know the orientation of the obstacle surface, i.e. the direction perpendicular to the surface of the wall. This information is stored in index 1 and 2 of the array as x and y components of a 2D vector for each wall periphery pixel.
@@ -116,7 +118,7 @@ If a pixel is within a checkpoint, index 3 stores the identification number of t
 The data in the array is generated in the following way (after initializing the information part with zeros):
 
 1. The walls are drawn first. For each wall the pixels within the defined rectangle are set to type 2, shown in the following figure in blue.
-Also in this step holes and checkpoints are drawn - this way further layers defining forbidden areas in the periphery of walls can override them (otherwise areas to close to walls could be defined as valid position for the center of the ball).
+Also in this step holes and checkpoints are drawn (more about these later) - this way further layers defining forbidden areas in the periphery of walls can override them (otherwise areas to close to walls could be defined as valid position for the center of the ball).
 
 <img src="documentation/val_data_grafic1.svg" alt="val data grafic1" width="400"/>
 
@@ -129,9 +131,17 @@ Also in this step holes and checkpoints are drawn - this way further layers defi
 <img src="documentation/val_data_grafic3.svg" alt="val data grafic3" width="400"/>
 
 In step 2 and 3 besides setting the type of the pixel, also the normal vectors in the wall periphery are defined. For the rectangles in step 2 the normal vector is simply pointing away from the wall, while for the quarter-circles in step 3 the vectors were generated by taking the position of each pixel relative to the center of the quarter-circle and normalizing it.
-The following figure shows the normal vectors in the wall periphery - the walls are shown in a semitransparent blue color. In the areas where two periphery rectangles overlap, the normal vectors are added, resulting in diagonal vectors, leading to the intended behavior.
+The following figure shows the normal vectors in the wall periphery - the pixeltype is shown in a grayscale where walls are the darkest, the wall periphery is a medium gray and the valid area is the lightest. In the areas where two periphery rectangles overlap, the normal vectors are added, resulting in diagonal vectors, leading to the intended behavior.
 
-<img src="documentation/vectors_corner_v2.png" alt="vector corner" width="800"/>
+<img src="documentation/corner_grafic.png" alt="vector corner" width="800"/>
+
+As mentioned before, holes and checkpoints are drawn in step 1. Both are drawn as circles with the defined radius. The pixels within the circle are set to type -1 (hole area) or -3 (checkpoint), while for the hole a few pixels in the center are set to type -2 (hole center). For the checkpoints thats enough, but for the holes to pull the ball to the center, vectors are needed. For this a similar approach as for the quarter-circles in step 3 is used: The position of each pixel within the hole relative to the center of the hole is calculated, reversed and normalized in such way that the vectors point to the center of the hole and their length grows towards the center. This leads to behavior that is somewhat similar to a ball rolling into a hole; if it just touches the periphery of the hole, there is a chance for it to escape, while if it gets closer to the center, it is pulled in more strongly. The following figure shows the vectors within a hole again with the pixeltype in grayscale where the valid area around is the darkest, the hole area is a medium gray and the hole center is the lightest.
+
+<img src="documentation/hole_grafic.png" alt="vector hole" width="800"/>
+
+Since the pixeltype defines the type of each pixel based on the coordinates on the screen, this representation can be used to draw a grayscale image of the map, which is shown in the next figure. The walls have the value 2 (darkest), the wall periphery 1, the valid area 0, the hole area -1, the hole center -2 and the checkpoints -3 (lightest).
+
+<img src="documentation/GameMap.png" alt="game map" width="800"/>
 
 ### Collision logic
 
@@ -231,3 +241,21 @@ The code overlay can also be opened by pressing the coresponding button located 
 
 #### Restarting the game
 If the online mode is disabled, the game can be restarted by pressing the restart button on the bottom right of the screen. In online mode the game can only be restarted if the broker sends "initialize" again.
+
+## Screenshots
+The first image shows the initial screen when the program is started and initialized - the player can start the game by pressing the "Go" button.
+
+<img src="documentation/GameImageStart.png" alt="start screen" width="800"/>
+
+The following image shows the game during gameplay with the ball at the start position in the middle of the map. It is running in offline mode on the pc, therefore the timer is shown and the gray dot on the top left next to the pause button is used to indicate collisions instead of the vibration motor (color changes to red). Further the restart button in the bottom right corner  is shown because of the offline mode. The checkpoints are shown as orange circles, as they are not yet reached; the black circles are holes.
+On this map each of the four checkpoints can be reached via a unique path from the center and between three of them, there are connecting paths as well.
+
+<img src="documentation/GameImageBegin.png" alt="game image" width="800"/>
+
+The next image shows the game after the last checkpoint is reached: the checkpoints are now green with a number/letter pairs and the code overlay is opened to enter the code.
+
+<img src="documentation/GameImageCode.png" alt="code overlay" width="800"/>
+
+The last image shows the final overlay after entering the correct code. The game was played in offline mode, therefore the time taken and the number of times the ball fell into holes is shown.
+
+<img src="documentation/GameImageFinished.png" alt="final overlay" width="800"/>
