@@ -156,35 +156,47 @@ class GameMap:
                 x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
 
                 # Create rectangle above - normalvector points upwards
-                subdata = self.val_data[y1- self.config.ball_radius:y1, x1:x2]
+                shifted = y1- self.config.ball_radius
+                if shifted < 0:
+                    shifted = 0
+                subdata = self.val_data[shifted:y1, x1:x2]
                 subdata[subdata[:,:, PXTYPE] != WALL] += np.array([0, -1, 0, 0]) # add the normalvector
                 subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = WALL_PERIPHERY # Set pixel type to WALL_PERIPHERY - done separately to avoid summing up pixel types
-                self.val_data[y1- self.config.ball_radius:y1, x1:x2] = subdata
+                self.val_data[shifted:y1, x1:x2] = subdata
 
                 # Create rectangle below - normalvector points downwards
-                subdata = self.val_data[y2:y2+ self.config.ball_radius, x1:x2]
+                shifted = y2 + self.config.ball_radius
+                if shifted > self.config.screen_height:
+                    shifted = self.config.screen_height
+                subdata = self.val_data[y2:shifted, x1:x2]
                 subdata[subdata[:,:, PXTYPE] != WALL] += np.array([0, 1, 0, 0]) # add the normalvector
                 subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = WALL_PERIPHERY # Set pixel type to WALL_PERIPHERY - done separately to avoid summing up pixel types
-                self.val_data[y2:y2+ self.config.ball_radius, x1:x2] = subdata
+                self.val_data[y2:shifted, x1:x2] = subdata
 
                 # Create rectangle left - normalvector points left
-                subdata = self.val_data[y1:y2, x1- self.config.ball_radius:x1]
+                shifted = x1 - self.config.ball_radius
+                if shifted < 0:
+                    shifted = 0
+                subdata = self.val_data[y1:y2, shifted:x1]
                 subdata[subdata[:,:, PXTYPE] != WALL] += np.array([0, 0, -1, 0]) # add the normalvector
                 subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = WALL_PERIPHERY # Set pixel type to WALL_PERIPHERY - done separately to avoid summing up pixel types
-                self.val_data[y1:y2, x1- self.config.ball_radius:x1] = subdata
+                self.val_data[y1:y2, shifted:x1] = subdata
 
                 # Create rectangle right - normalvector points right
-                subdata = self.val_data[y1:y2, x2:x2+ self.config.ball_radius]
+                shifted = x2 + self.config.ball_radius
+                if shifted > self.config.screen_width:
+                    shifted = self.config.screen_width
+                subdata = self.val_data[y1:y2, x2:shifted]
                 subdata[subdata[:,:, PXTYPE] != WALL] += np.array([0, 0, 1, 0]) # add the normalvector
                 subdata[subdata[:,:, PXTYPE] <= VALID, PXTYPE] = WALL_PERIPHERY # Set pixel type to WALL_PERIPHERY - done separately to avoid summing up pixel types
-                self.val_data[y1:y2, x2:x2+ self.config.ball_radius] = subdata
+                self.val_data[y1:y2, x2:shifted] = subdata
 
         
         # Create template mask of whole circle for wallcorners including normal vectors
         circle_wall = np.zeros((2 * self.config.ball_radius + 1, 2 * self.config.ball_radius + 1))
         Y, X = np.ogrid[:2 * self.config.ball_radius + 1, :2 * self.config.ball_radius + 1]
-        mask_corner = ((X - self.config.ball_radius) ** 2) + ((Y - self.config.ball_radius) ** 2) <= self.config.ball_radius ** 2
-        circle_wall[mask_corner] = WALL_PERIPHERY # corner surroundings of walls are also marked as such
+        mask_circle = ((X - self.config.ball_radius) ** 2) + ((Y - self.config.ball_radius) ** 2) <= self.config.ball_radius ** 2
+        circle_wall[mask_circle] = WALL_PERIPHERY # corner surroundings of walls are also marked as such
         idx = np.indices((2 * self.config.ball_radius + 1, 2 * self.config.ball_radius + 1)) # generating a 2D array e.g. (-2, -1, 0, 1, 2) for x and y
         circle_wall = np.stack(
             (
@@ -202,21 +214,47 @@ class GameMap:
                 x1, y1, x2, y2 = int(obj[1]), int(obj[2]), int(obj[3]), int(obj[4])
 
                 # Create masks for the respective corners and insert circle sector at each corner
+                shifted_x1 = x1 - self.config.ball_radius
+                shifted_y1 = y1 - self.config.ball_radius
+                shifted_x2 = x2 + self.config.ball_radius
+                shifted_y2 = y2 + self.config.ball_radius
+                if shifted_x1 < 0:
+                    shifted_x1 = 0
+                if shifted_y1 < 0:
+                    shifted_y1 = 0
+                if shifted_x2 > self.config.screen_width:
+                    shifted_x2 = self.config.screen_width
+                if shifted_y2 > self.config.screen_height:
+                    shifted_y2 = self.config.screen_height
+
+                diff_x1 = x1 - shifted_x1
+                offset_x1 = self.config.ball_radius - diff_x1
+                diff_y1 = y1 - shifted_y1
+                offset_y1 = self.config.ball_radius - diff_y1
+                diff_x2 = shifted_x2 - x2
+                offset_x2 = self.config.ball_radius + diff_x2 + 1
+                diff_y2 = shifted_y2 - y2
+                offset_y2 = self.config.ball_radius + diff_y2 + 1
+
                 # Top left corner
-                mask = np.isin(self.val_data[y1- self.config.ball_radius:y1, x1- self.config.ball_radius:x1, PXTYPE], [VALID, HOLE_AREA])
-                self.val_data[y1-self.config.ball_radius:y1, x1-self.config.ball_radius:x1][mask] = circle_wall[: self.config.ball_radius, : self.config.ball_radius][mask]
-                
+                mask = np.isin(self.val_data[shifted_y1:y1, shifted_x1:x1, PXTYPE], [VALID, HOLE_AREA])
+                mask[mask_circle[offset_y1: self.config.ball_radius, offset_x1: self.config.ball_radius] != 1] = False
+                self.val_data[shifted_y1:y1, shifted_x1:x1][mask] = circle_wall[offset_y1: self.config.ball_radius, offset_x1: self.config.ball_radius][mask]
+
                 # Top right corner
-                mask = np.isin(self.val_data[y1-self.config.ball_radius:y1, x2:x2+self.config.ball_radius, PXTYPE], [VALID, HOLE_AREA])
-                self.val_data[y1-self.config.ball_radius:y1, x2:x2+self.config.ball_radius][mask] = circle_wall[: self.config.ball_radius, self.config.ball_radius + 1:][mask]
+                mask = np.isin(self.val_data[shifted_y1:y1, x2:shifted_x2, PXTYPE], [VALID, HOLE_AREA])
+                mask[mask_circle[offset_y1: self.config.ball_radius, self.config.ball_radius + 1:offset_x2] != 1] = False
+                self.val_data[shifted_y1:y1, x2:shifted_x2][mask] = circle_wall[offset_y1: self.config.ball_radius, self.config.ball_radius + 1:offset_x2][mask]
                 
                 # Bottom left corner
-                mask = np.isin(self.val_data[y2:y2+ self.config.ball_radius, x1- self.config.ball_radius:x1, PXTYPE], [VALID, HOLE_AREA])
-                self.val_data[y2:y2+self.config.ball_radius, x1-self.config.ball_radius:x1][mask] = circle_wall[ self.config.ball_radius + 1:, : self.config.ball_radius][mask]
+                mask = np.isin(self.val_data[y2:shifted_y2, shifted_x1:x1, PXTYPE], [VALID, HOLE_AREA])
+                mask[mask_circle[self.config.ball_radius + 1:offset_y2, offset_x1: self.config.ball_radius] != 1] = False
+                self.val_data[y2:shifted_y2, shifted_x1:x1][mask] = circle_wall[ self.config.ball_radius + 1:offset_y2, offset_x1: self.config.ball_radius][mask]
                 
                 # Bottom right corner
-                mask = np.isin(self.val_data[y2:y2+ self.config.ball_radius, x2:x2+ self.config.ball_radius, PXTYPE], [VALID, HOLE_AREA])
-                self.val_data[y2:y2+ self.config.ball_radius, x2:x2+ self.config.ball_radius][mask] = circle_wall[ self.config.ball_radius + 1:, self.config.ball_radius + 1:][mask]
+                mask = np.isin(self.val_data[y2:shifted_y2, x2:shifted_x2, PXTYPE], [VALID, HOLE_AREA])
+                mask[mask_circle[self.config.ball_radius + 1:offset_y2, self.config.ball_radius + 1:offset_x2] != 1] = False
+                self.val_data[y2:shifted_y2, x2:shifted_x2][mask] = circle_wall[self.config.ball_radius + 1:offset_y2, self.config.ball_radius + 1:offset_x2][mask]
 
     def draw_map(self, canvas: tk.Canvas):
         """
