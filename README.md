@@ -32,8 +32,7 @@ When $V_{in1}$ or $V_{in2}$ is set to HIGH, the corresponding transistor $T_1$ o
 
 ### PCB layout
 
-The double layer PCB shows the placement of the components and the connections on the top and bottom layer. The dimensions of the PCB are $2 cm$ x $2 cm$.
-<!-- whats top, whats bottom? -->
+The double layer PCB shows the placement of the components and the connections on the top (yellow) and bottom (orange) layer. The dimensions of the PCB are $2 cm$ x $2 cm$.
 On the left side the connections to the Raspberry Pi and the motors are located.
 
 <img src="documentation/layout.png" alt="pcb layout" width="600"/>
