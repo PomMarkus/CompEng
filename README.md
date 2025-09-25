@@ -26,6 +26,7 @@ The following schematic and layout show the transistor circuit with the values o
 
 $V_{in1}$ for the Vibration motor control is connected to GPIO 14 and $V_{in2}$ for the fan control is connected to GPIO 15. $V_{CC}$ is connected to the 5V pin of the Raspberry Pi, while $GND$ is connected to a GND pin. The flyback diods $D_1$ and $D_2$ are 1N4007 diods. The capacitance of the Capacitors sum up to $440 \mu F$ (two 220 $\mu F$ Capacitors were used, because of availability). The resistors have a resistance of $220 \Omega$ to ensure that the Transisor works as a switch/ in saturation mode. The transistors are BC547B NPN transistors. The Fan is a 5V fan, while the vibration motor is a 3V motor. Therefore the vibration motor needs a resistor of $34 \Omega$ in series to limit the current to $~80 mA$.
 <!-- Explain functionality? -->
+When $V_{in1}$ or $V_{in2}$ is set to HIGH, the corresponding transistor $T_1$ or $T_2$ turns on and connects the motor to ground, allowing current to flow from $V_{CC}$ through the motor to ground, thus powering the motor.
 
 <img src="documentation/Schematic.svg" alt="schematic" width="600"/>
 
@@ -79,7 +80,7 @@ python3 main.py
  
 ### Cooling fan
 
-The cooling fan gets controlled via a seperated programm (adaptive_cooling.py) added to the autostart. When the CPU temperature exceeds 58 °C the fan turns on with 30% and increases its speed with increasing temperature up to 100% at 100° C. 
+The cooling fan gets controlled via a seperated programm (adaptive_cooling.py) added to the autostart. When the CPU temperature exceeds 58 °C the fan turns on with 30% and increases its speed with increasing temperature up to 100% at 100° C. The speed is regulated using Pulse Width Modulation (PWM) with 1kHz. 
 
 ### MPU6050 gyro sensor
 
