@@ -9,11 +9,35 @@ app.run()
 if app.config.mpl_debug:
         try:
             import matplotlib.pyplot as plt
+            from matplotlib.colors import BoundaryNorm
             import numpy as np
-            plt.imshow(-app.game_map.val_data[:,:,0], cmap='gray', vmin=-3, vmax=4)
-            plt.title("Game Map val_data")
-            plt.show()
 
+            # Grayscale map
+            # ========================================================================
+            plt.rcParams.update({'font.size': 18})  # Set global font size
+            data = -app.game_map.val_data[:,:,0]
+            vmin, vmax = -3, 4
+            bounds = np.arange(vmin, vmax + 2) - 0.5  # boundaries for each integer
+            # Use a discrete colormap with enough colors
+            cmap = plt.get_cmap('gray', vmax - vmin + 1)
+
+            colors = cmap(np.arange(cmap.N))  # alle Farben     #-----
+            cmap_new = plt.cm.colors.ListedColormap(colors[1:-1]) #-------
+            bounds_new = bounds[1:-1] # cut bounds for new cmap 
+            norm = BoundaryNorm(bounds_new, cmap_new.N)
+
+            plt.imshow(data, cmap=cmap_new, norm=norm, interpolation='nearest')
+            ticks = np.arange(-2,4)
+            custom_labels=["Wall", "Wall Periphery", "Valid", "Hole area", "Hole center", "Checkpoint"]
+            cbar = plt.colorbar(ticks=ticks, shrink=0.666)
+            cbar.ax.set_yticklabels(custom_labels)
+            plt.title("Game Map")
+            plt.tight_layout()
+            plt.show()
+            # ========================================================================
+
+            # Vector field
+            # ========================================================================
             # Downsample for clarity (optional, otherwise plot will be very dense)
             plot_data = app.game_map.val_data
             step = 1  # plot every 10th pixel
@@ -24,9 +48,11 @@ if app.config.mpl_debug:
             plt.figure(figsize=(10, 10))
             plt.quiver(X, Y, U, V, angles='xy', scale_units='xy', scale=1, color='red')
             plt.gca().invert_yaxis()  # To match image coordinates
-            plt.title("Gradient Field (from data[:,:,1] and data[:,:,2])")
+            plt.title("Gradient Field")
             plt.axis('equal')
             plt.show()
+
+            # ========================================================================
 
         except ImportError:
             print("Matplotlib not installed. Cannot display debug plots.")
